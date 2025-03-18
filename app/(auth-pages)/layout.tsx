@@ -1,9 +1,16 @@
+import Navbar from "@/components/navigation";
+
 export default async function Layout({
   children,
 }: {
   children: React.ReactNode;
 }) {
   return (
-    <div className="max-w-7xl flex flex-col gap-12 items-start">{children}</div>
+    <div className="h-screen w-full flex flex-col">
+    <Navbar />
+    <div className="flex-1 flex items-center justify-center overflow-hidden">
+      {children}
+    </div>
+  </div>
   );
 }
