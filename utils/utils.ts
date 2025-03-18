@@ -12,5 +12,11 @@ export function encodedRedirect(
   path: string,
   message: string,
 ) {
-  return redirect(`${path}?${type}=${encodeURIComponent(message)}`);
+  // Cek apakah path sudah memiliki query parameter
+  const separator = path.includes('?') ? '&' : '?';
+  // Buat URLSearchParams untuk fleksibilitas jika nanti ingin menambah parameter lain
+  const params = new URLSearchParams();
+  params.set(type, message);
+
+  return redirect(`${path}${separator}${params.toString()}`);
 }
