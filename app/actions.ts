@@ -64,6 +64,18 @@ export const signInAction = async (formData: FormData) => {
     return encodedRedirect("error", "/sign-in", error.message);
   }
 
+  const {data: userData, error: userError} = await supabase.auth.getUser()
+  if(userError || !userData.user){
+    await supabase.auth.signOut();
+    return encodedRedirect("error", "/sign-in", "Failed to fetch user data.");
+  }
+
+  const role = userData.user.user_metadata?.role;
+  if (role !== "admin") {
+    await supabase.auth.signOut();
+    return encodedRedirect("error", "/sign-in", "Access denied. Only admin can login.");
+  }
+
   return redirect("/dashboard");
 };
 
