@@ -3,7 +3,7 @@ import * as React from "react";
 import { cn } from "@/lib/utils";
 
 export interface InputProps
-  extends React.InputHTMLAttributes<HTMLInputElement> {}
+  extends React.InputHTMLAttributes<HTMLInputElement> { }
 
 const Input = React.forwardRef<HTMLInputElement, InputProps>(
   ({ className, type, ...props }, ref) => {
@@ -21,5 +21,9 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
   },
 );
 Input.displayName = "Input";
+
+export function Label({ children }: { children: React.ReactNode }) {
+  return <label className="block text-sm font-medium text-gray-700">{children}</label>;
+}
 
 export { Input };
