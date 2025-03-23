@@ -13,10 +13,9 @@ import { cn } from "@/lib/utils"
 import { AddEventDialog } from "@/components/add-event-dialog"
 import type { ScheduleEvent } from "@/types/schedule-types"
 
-// Import schedule data and functions
+
 import { scheduleData, addEvent, deleteEvent } from "@/data/schedule-data"
 
-// Updated room data
 const rooms = [
   "Success Meeting Room",
   "Hard Work Meeting Room",
@@ -34,18 +33,17 @@ export default function TableSchedule() {
   const [events, setEvents] = useState<ScheduleEvent[]>(scheduleData)
   const [isAddEventOpen, setIsAddEventOpen] = useState(false)
 
-  // Update local state when scheduleData changes
   useEffect(() => {
     setEvents([...scheduleData])
   }, [])
 
-  // Filter events for the selected date and event type
+  // filter events
   const filteredEvents = events.filter((event) => {
     const eventDate = new Date(event.date)
     const eventEndDate = new Date(eventDate)
     eventEndDate.setHours(eventEndDate.getHours() + event.duration)
 
-    // Check if the event spans to the next day(s)
+    // cek lama event
     const eventDay = eventDate.getDate()
     const eventMonth = eventDate.getMonth()
     const eventYear = eventDate.getFullYear()
@@ -54,12 +52,11 @@ export default function TableSchedule() {
     const selectedMonth = date.getMonth()
     const selectedYear = date.getFullYear()
 
-    // Event starts on the selected date
+    // event mulai di hari yang dipilih
     const startsOnSelectedDate = eventDay === selectedDay && eventMonth === selectedMonth && eventYear === selectedYear
 
-    // Event spans multiple days and includes the selected date
     const spansToSelectedDate = () => {
-      // Convert dates to timestamps for easier comparison
+
       const eventStart = new Date(eventYear, eventMonth, eventDay).getTime()
       const eventEnd = new Date(eventYear, eventMonth, eventDay)
       eventEnd.setHours(event.startTime + event.duration)
@@ -67,31 +64,24 @@ export default function TableSchedule() {
       const selectedDate = new Date(selectedYear, selectedMonth, selectedDay).getTime()
       const nextDay = new Date(selectedYear, selectedMonth, selectedDay + 1).getTime()
 
-      // Check if selected date is between event start and end
       return selectedDate >= eventStart && selectedDate < eventEnd.getTime()
     }
 
-    // Event is visible on the selected date if it starts on that date or spans to it
     const dateMatches = startsOnSelectedDate || spansToSelectedDate()
 
-    // Filter by event type if not "all"
     const typeMatches = eventType === "all" || event.type.toLowerCase() === eventType.toLowerCase()
 
     return dateMatches && typeMatches
   })
 
   const handleAddEvent = (newEvent: ScheduleEvent) => {
-    // Add to the schedule data
     addEvent(newEvent)
-    // Update local state
     setEvents([...scheduleData])
     setIsAddEventOpen(false)
   }
 
   const handleDeleteEvent = (eventId: string) => {
-    // Delete from the schedule data
     deleteEvent(eventId)
-    // Update local state
     setEvents([...scheduleData])
   }
 
