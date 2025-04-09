@@ -1,3 +1,5 @@
+"use client"
+
 import { Calendar, Home, Inbox, Search, Settings } from "lucide-react"
 
 import {
@@ -6,10 +8,15 @@ import {
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
+  SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
+import { NavUser } from "./nav-user"
+import { useEffect, useState } from "react"
+import { createClient } from "@/utils/supabase/client" 
+
 
 // Menu items.
 const items = [
@@ -19,33 +26,42 @@ const items = [
     icon: Home,
   },
   {
-    title: "Inbox",
-    url: "#",
-    icon: Inbox,
-  },
-  {
     title: "Meeting Room Booking",
     url: "/meetings-rooms",
     icon: Calendar,
   },
-  {
-    title: "Search",
-    url: "#",
-    icon: Search,
-  },
-  {
-    title: "Settings",
-    url: "#",
-    icon: Settings,
-  },
 ]
 
 export function AppSidebar() {
+  const [user, setUser] = useState<{ name: string; email: string } | null>(null)
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      const supabase = createClient()
+      const { data, error } = await supabase.auth.getUser()
+
+      if (error) {
+        console.error("Gagal mengambil user:", error.message)
+        return
+      }
+
+      if (data?.user) {
+        const name = data.user.user_metadata?.name || "No Name"
+        const email = data.user.email ?? "no-email@example.com"
+        setUser({ name, email })
+      }
+    }
+
+    fetchUser()
+  }, [])
   return (
     <Sidebar>
+      <SidebarHeader>
+        {user && <NavUser user={user} />}
+      </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Application</SidebarGroupLabel>
+          <SidebarGroupLabel>Feature</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {items.map((item) => (
