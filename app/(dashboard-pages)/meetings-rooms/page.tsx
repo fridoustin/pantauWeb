@@ -1,95 +1,130 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { CalendarIcon, Plus } from "lucide-react"
-import { format } from "date-fns"
+import { useState, useEffect } from "react";
+import { CalendarIcon, Plus } from "lucide-react";
+import { format } from "date-fns";
 
-import { Button } from "@/components/ui/button"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { ScheduleTable } from "@/components/schedule-table"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { Calendar } from "@/components/ui/calendar"
-import { cn } from "@/lib/utils"
-import { AddEventDialog } from "@/components/add-event-dialog"
-import type { ScheduleEvent } from "@/types/schedule-types"
-
-
-import { scheduleData, addEvent, deleteEvent } from "@/data/schedule-data"
-
-const rooms = [
-  "Success Meeting Room",
-  "Hard Work Meeting Room",
-  "Loyalty Meeting Room",
-  "Fighting Meeting Room",
-  "Auditorium",
-  "Gym",
-  "Holding Room/Library",
-  "Basket Ball/Futsal Court",
-]
+import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { ScheduleTable } from "@/components/schedule-table";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { cn } from "@/lib/utils";
+import { AddEventDialog } from "@/components/add-event-dialog";
+import type { ScheduleEvent } from "@/types/schedule-types";
 
 export default function TableSchedule() {
-  const [date, setDate] = useState<Date>(new Date())
-  const [eventType, setEventType] = useState<string>("all")
-  const [events, setEvents] = useState<ScheduleEvent[]>(scheduleData)
-  const [isAddEventOpen, setIsAddEventOpen] = useState(false)
+  const [date, setDate] = useState<Date>(new Date());
+  const [eventType, setEventType] = useState<string>("all");
+  const [events, setEvents] = useState<ScheduleEvent[]>([]);
+  const [rooms, setRooms] = useState<string[]>([]);
+  const [isAddEventOpen, setIsAddEventOpen] = useState(false);
 
+  // Ambil data event dari API
   useEffect(() => {
-    setEvents([...scheduleData])
-  }, [])
+    fetchEvents();
+    fetchRooms();
+  }, []);
 
-  // filter events
+  const fetchEvents = async () => {
+    const res = await fetch("/api/bookings");
+    const data = await res.json();
+    if (data.events) {
+      setEvents(data.events);
+    }
+  };
+
+  const fetchRooms = async () => {
+    const res = await fetch("/api/rooms");
+    const data = await res.json();
+    if (data.rooms) {
+      setRooms(data.rooms.map((room: any) => room.name));
+    }
+  };
+
+  // Filter events sesuai tanggal dan tipe
   const filteredEvents = events.filter((event) => {
-    const eventDate = new Date(event.date)
-    const eventEndDate = new Date(eventDate)
-    eventEndDate.setHours(eventEndDate.getHours() + event.duration)
+    const eventDate = new Date(event.date);
+    const eventEndDate = new Date(eventDate);
+    eventEndDate.setHours(eventEndDate.getHours() + event.duration);
 
-    // cek lama event
-    const eventDay = eventDate.getDate()
-    const eventMonth = eventDate.getMonth()
-    const eventYear = eventDate.getFullYear()
+    const eventDay = eventDate.getDate();
+    const eventMonth = eventDate.getMonth();
+    const eventYear = eventDate.getFullYear();
 
-    const selectedDay = date.getDate()
-    const selectedMonth = date.getMonth()
-    const selectedYear = date.getFullYear()
+    const selectedDay = date.getDate();
+    const selectedMonth = date.getMonth();
+    const selectedYear = date.getFullYear();
 
-    // event mulai di hari yang dipilih
-    const startsOnSelectedDate = eventDay === selectedDay && eventMonth === selectedMonth && eventYear === selectedYear
+    const startsOnSelectedDate =
+      eventDay === selectedDay &&
+      eventMonth === selectedMonth &&
+      eventYear === selectedYear;
 
     const spansToSelectedDate = () => {
+      const eventStart = new Date(eventYear, eventMonth, eventDay).getTime();
+      const eventEnd = new Date(eventYear, eventMonth, eventDay);
+      eventEnd.setHours(event.startTime + event.duration);
+      const selectedDate = new Date(selectedYear, selectedMonth, selectedDay).getTime();
+      return selectedDate >= eventStart && selectedDate < eventEnd.getTime();
+    };
 
-      const eventStart = new Date(eventYear, eventMonth, eventDay).getTime()
-      const eventEnd = new Date(eventYear, eventMonth, eventDay)
-      eventEnd.setHours(event.startTime + event.duration)
+    const dateMatches = startsOnSelectedDate || spansToSelectedDate();
+    const typeMatches =
+      eventType === "all" ||
+      event.type.toLowerCase() === eventType.toLowerCase();
 
-      const selectedDate = new Date(selectedYear, selectedMonth, selectedDay).getTime()
-      const nextDay = new Date(selectedYear, selectedMonth, selectedDay + 1).getTime()
+    return dateMatches && typeMatches;
+  });
 
-      return selectedDate >= eventStart && selectedDate < eventEnd.getTime()
+  const handleAddEvent = async (newEvent: ScheduleEvent) => {
+    // Kirim POST ke API
+    const res = await fetch("/api/bookings", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(newEvent),
+    });
+    const result = await res.json();
+    if (result.error) {
+      console.error("Error menambahkan event:", result.error);
+    } else {
+      fetchEvents();
+      setIsAddEventOpen(false);
     }
+  };
 
-    const dateMatches = startsOnSelectedDate || spansToSelectedDate()
-
-    const typeMatches = eventType === "all" || event.type.toLowerCase() === eventType.toLowerCase()
-
-    return dateMatches && typeMatches
-  })
-
-  const handleAddEvent = (newEvent: ScheduleEvent) => {
-    addEvent(newEvent)
-    setEvents([...scheduleData])
-    setIsAddEventOpen(false)
-  }
-
-  const handleDeleteEvent = (eventId: string) => {
-    deleteEvent(eventId)
-    setEvents([...scheduleData])
-  }
+  const handleDeleteEvent = async (eventId: string) => {
+    const res = await fetch(`/api/bookings?booking_id=${eventId}`, {
+      method: "DELETE",
+    });
+    const result = await res.json();
+    if (result.error) {
+      console.error("Error menghapus event:", result.error);
+    } else {
+      fetchEvents();
+    }
+  };
 
   return (
     <div className="w-full h-full flex flex-col">
       <div className="flex justify-between items-center p-6">
         <h1 className="text-3xl font-bold">Room Schedule</h1>
-        <Button className="flex items-center gap-2" onClick={() => setIsAddEventOpen(true)}>
+        <Button
+          className="flex items-center gap-2"
+          onClick={() => setIsAddEventOpen(true)}
+        >
           <Plus className="h-4 w-4" />
           Add Event
         </Button>
@@ -102,7 +137,10 @@ export default function TableSchedule() {
               <PopoverTrigger asChild>
                 <Button
                   variant="outline"
-                  className={cn("justify-start text-left font-normal", !date && "text-muted-foreground")}
+                  className={cn(
+                    "justify-start text-left font-normal",
+                    !date && "text-muted-foreground"
+                  )}
                 >
                   <CalendarIcon className="mr-2 h-4 w-4" />
                   {date ? format(date, "MMMM do, yyyy") : <span>Pick a date</span>}
@@ -134,7 +172,12 @@ export default function TableSchedule() {
           </div>
         </div>
 
-        <ScheduleTable rooms={rooms} data={filteredEvents} onDeleteEvent={handleDeleteEvent} selectedDate={date} />
+        <ScheduleTable
+          rooms={rooms}
+          data={filteredEvents}
+          onDeleteEvent={handleDeleteEvent}
+          selectedDate={date}
+        />
       </div>
 
       <AddEventDialog
@@ -146,6 +189,5 @@ export default function TableSchedule() {
         existingEvents={events}
       />
     </div>
-  )
+  );
 }
-
