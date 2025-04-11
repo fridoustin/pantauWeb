@@ -8,6 +8,7 @@ import { ThemeProvider } from "next-themes";
 import Link from "next/link";
 import "./globals.css";
 import Navbar from "@/components/navigation";
+import { Toaster } from "sonner";
 
 const defaultUrl = process.env.VERCEL_URL
   ? `https://${process.env.VERCEL_URL}`
@@ -15,8 +16,8 @@ const defaultUrl = process.env.VERCEL_URL
 
 export const metadata = {
   metadataBase: new URL(defaultUrl),
-  title: "Next.js and Supabase Starter Kit",
-  description: "The fastest way to build apps with Next.js and Supabase",
+  title: "Pantau",
+  description: "Dashboard Manajemen Teknisi",
 };
 
 const geistSans = Geist({
@@ -38,6 +39,9 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
+          {/* Toaster for global notifications */}
+          <Toaster position="top-right" />
+
           <main className="h-screen w-full flex flex-col items-center">
             {children}
           </main>
