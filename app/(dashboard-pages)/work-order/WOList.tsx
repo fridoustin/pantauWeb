@@ -4,9 +4,10 @@ import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import WorkOrderCard from "@/components/ui/WorkOrderCard";
+import WorkOrderDetailModal from "@/components/ui/WorkOrderDetailModal";
 import { useRouter } from "next/navigation";
 
-// Custom hook untuk mengecek apakah komponen sudah ter-mount
+
 function useHasMounted() {
   const [hasMounted, setHasMounted] = useState(false);
 
@@ -19,10 +20,19 @@ function useHasMounted() {
 
 export default function WorkOrderList({ initialOrders }: { initialOrders: any[] }) {
   const [search, setSearch] = useState("");
-  const [status, setStatus] = useState("Semua Status");
+  const [status, setStatus] = useState("All Status");
+  const [date, setDate] = useState<Date>(new Date());
   const [now, setNow] = useState(new Date());
   const router = useRouter();
   const hasMounted = useHasMounted();
+
+  const [selectedOrder, setSelectedOrder] = useState<any>(null);
+  const [showModal, setShowModal] = useState(false);
+
+  const handleViewDetail = (data: any) => {
+    setSelectedOrder(data);
+    setShowModal(true);
+  };
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -33,24 +43,26 @@ export default function WorkOrderList({ initialOrders }: { initialOrders: any[] 
 
   const filteredOrders = initialOrders.filter((wo) => {
     const matchesTitle = wo.title.toLowerCase().includes(search.toLowerCase());
-    const matchesStatus = status === "Semua Status" || wo.status === status;
+    const matchesStatus = status === "All Status" || wo.status === status;
     return matchesTitle && matchesStatus;
   });
 
   return (
     <div className="min-h-screen bg-background flex items-start justify-center px-4 py-10">
-      <div className="relative top-[-40px] left-[125px] max-w-7xl w-full">
+      <div className="relative top-[-40px] h-full w-full">
         <h2 className="text-3xl font-bold text-gray-800 dark:text-white mb-1">Work Orders</h2>
-  
+
+        {/* realtime calendar */}
         {hasMounted && (
-          <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
+          <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">
             {now.toLocaleString("id-ID")}
           </p>
         )}
-  
-        <div className="flex flex-wrap gap-4 items-center mb-6">
+
+        {/* Filter bar */}
+        <div className="flex flex-row gap-4 items-center mb-6">
           <Input
-            placeholder="Cari berdasarkan judul..."
+            placeholder="Search by title..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full md:w-64"
@@ -60,26 +72,37 @@ export default function WorkOrderList({ initialOrders }: { initialOrders: any[] 
             value={status}
             onChange={(e) => setStatus(e.target.value)}
           >
-            <option>Semua Status</option>
-            <option>Menunggu</option>
-            <option>Sedang Dikerjakan</option>
-            <option>Selesai</option>
+            <option>All Status</option>
+            <option>Finish</option>
+            <option>Procces</option>
+            <option>Waiting</option>
           </select>
-          <Button variant="outline" className="text-sm" onClick={() => router.push("/work-order/add")}>
-            Add Work Order
-          </Button>
-  
-          <Button variant="outline" className="text-sm" onClick={() => router.push("/work-order/history")}>
-            History
-          </Button>
+
+          {/* posisi button */}
+          <div className="justify-end w-full flex gap-8">
+            <Button variant="outline" className="text-sm" onClick={() => router.push("/work-order/add")}>
+              Add Work Order
+            </Button>
+            <Button variant="outline" className="text-sm" onClick={() => router.push("/work-order/history")}>
+              History
+            </Button>
+          </div>
         </div>
-  
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+
+        {/* Daftar work order */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {filteredOrders.map((wo) => (
-            <WorkOrderCard key={wo.id} data={wo} />
+            <WorkOrderCard key={wo.id} data={wo} onViewDetail={handleViewDetail} />
           ))}
         </div>
+
+        {/* Modal Detail */}
+        <WorkOrderDetailModal
+          open={showModal}
+          onClose={() => setShowModal(false)}
+          workOrder={selectedOrder}
+        />
       </div>
     </div>
   );
-}  
+}

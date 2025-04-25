@@ -1,6 +1,6 @@
 "use client"
 
-import { Calendar, Home, Inbox, Search, Settings } from "lucide-react"
+import { Calendar, Home, Inbox, Search, Settings, Briefcase, ClipboardList } from "lucide-react"
 
 import {
   Sidebar,
@@ -29,6 +29,11 @@ const items = [
     title: "Meeting Room Booking",
     url: "/meetings-rooms",
     icon: Calendar,
+  },
+  {
+    title: "Work Order",
+    url: "/work-order",
+    icon: Briefcase,
   },
 ]
 
