@@ -1,7 +1,6 @@
 "use client"
 
-import { Calendar, Home, Inbox, Search, Settings, Briefcase, ClipboardList } from "lucide-react"
-
+import { Calendar, Home, Briefcase } from "lucide-react"
 import {
   Sidebar,
   SidebarContent,
@@ -15,8 +14,8 @@ import {
 } from "@/components/ui/sidebar"
 import { NavUser } from "./nav-user"
 import { useEffect, useState } from "react"
-import { createClient } from "@/utils/supabase/client" 
-
+import { createClient } from "@/utils/supabase/client"
+import { ThemeSwitcher } from "@/components/theme-switcher"
 
 // Menu items.
 const items = [
@@ -35,6 +34,11 @@ const items = [
     url: "/work-order",
     icon: Briefcase,
   },
+  {
+    title: "Theme Switcher",
+    url: "#",
+    icon: ThemeSwitcher,
+  }
 ]
 
 export function AppSidebar() {
@@ -59,6 +63,7 @@ export function AppSidebar() {
 
     fetchUser()
   }, [])
+
   return (
     <Sidebar>
       <SidebarHeader>
@@ -72,10 +77,15 @@ export function AppSidebar() {
               {items.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
-                    <a href={item.url}>
-                      <item.icon />
-                      <span>{item.title}</span>
-                    </a>
+                    {item.title === "Theme Switcher" ? (
+                      // Directly render the ThemeSwitcher component
+                      <ThemeSwitcher />
+                    ) : (
+                      <a href={item.url}>
+                        <item.icon />
+                        <span>{item.title}</span>
+                      </a>
+                    )}
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
