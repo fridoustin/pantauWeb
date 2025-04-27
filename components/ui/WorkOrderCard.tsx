@@ -1,20 +1,27 @@
+"use client";
+
+import { Button } from "@/components/ui/button";
+
 interface WorkOrderCardProps {
-    data: {
-      id: number;
-      title: string;
-      status: string;
-    };
-  }
-  
-  export default function WorkOrderCard({ data }: WorkOrderCardProps) {
-    return (
-      <div className="bg-white p-4 rounded-lg shadow hover:shadow-md transition">
-        <h2 className="font-bold text-lg">{data.title}</h2>
-        <p className="text-sm text-gray-600">Status: {data.status}</p>
-        <button className="mt-2 text-blue-600 hover:underline text-sm">
-          Lihat Detail
-        </button>
-      </div>
-    );
-  }
-  
+  data: {
+    id: string;
+    title: string;
+    status: string;
+  };
+  onViewDetail: (data: any) => void;
+}
+
+export default function WorkOrderCard({ data, onViewDetail }: WorkOrderCardProps) {
+  return (
+    <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl p-4 shadow hover:shadow-lg transition-all">
+      <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">{data.title}</h3>
+      <p className="text-sm text-gray-700 dark:text-gray-300">Status: {data.status}</p>
+      <button
+        onClick={() => onViewDetail(data)}
+        className="mt-2 text-sm text-blue-600 dark:text-blue-400 hover:underline"
+      >
+        View Detail
+      </button>
+    </div>
+  );
+}
