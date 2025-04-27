@@ -33,13 +33,14 @@ export function AddWorkOrderDialog({
     });
 
     const handleSubmit = form.handleSubmit((data) => {
-        onAddWorkOrder({
+        const newWorkOrder = {
             ...data,
             id: Date.now(),
             createdAt: now.toLocaleString(),
-        });
+        };
+        onAddWorkOrder(newWorkOrder);  // Update parent state with new work order
         form.reset();
-        onOpenChange(false);
+        onOpenChange(false);  // Close the dialog after submission
     });
 
     useEffect(() => {

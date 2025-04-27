@@ -30,15 +30,19 @@ export default function WorkOrderList({ initialOrders }: { initialOrders: any[] 
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
 
+  // Handler for viewing the work order details
   const handleViewDetail = (data: any) => {
     setSelectedOrder(data);
     setShowDetailModal(true);
   };
 
+  // Handler for adding a new work order
   const handleAddWorkOrder = (newOrder: any) => {
     setOrders((prev) => [...prev, newOrder]);
+    setSelectedOrder(newOrder);  // Optional: Automatically select the new order for details view
   };
 
+  // Update the current time every second
   useEffect(() => {
     const timer = setInterval(() => {
       setNow(new Date());
@@ -46,6 +50,7 @@ export default function WorkOrderList({ initialOrders }: { initialOrders: any[] 
     return () => clearInterval(timer);
   }, []);
 
+  // Filter orders based on search and status
   const filteredOrders = orders.filter((wo) => {
     const matchesTitle = wo.title.toLowerCase().includes(search.toLowerCase());
     const matchesStatus = status === "All Status" || wo.status === status;
@@ -78,7 +83,7 @@ export default function WorkOrderList({ initialOrders }: { initialOrders: any[] 
           >
             <option>All Status</option>
             <option>Finish</option>
-            <option>Procces</option>
+            <option>Process</option>
             <option>Waiting</option>
           </select>
 
@@ -99,7 +104,7 @@ export default function WorkOrderList({ initialOrders }: { initialOrders: any[] 
           ))}
         </div>
 
-        {/* Detail modal */}
+        {/* Work Order Detail Modal */}
         <WorkOrderDetailModal
           open={showDetailModal}
           onClose={() => setShowDetailModal(false)}
