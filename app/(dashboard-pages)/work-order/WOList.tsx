@@ -5,8 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import WorkOrderCard from "@/components/ui/WorkOrderCard";
 import WorkOrderDetailModal from "@/components/ui/WorkOrderDetailModal";
+import { AddWorkOrderDialog } from "@/components/ui/add-WorkOrder-dialog";
 import { useRouter } from "next/navigation";
-
 
 function useHasMounted() {
   const [hasMounted, setHasMounted] = useState(false);
@@ -21,17 +21,22 @@ function useHasMounted() {
 export default function WorkOrderList({ initialOrders }: { initialOrders: any[] }) {
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("All Status");
-  const [date, setDate] = useState<Date>(new Date());
   const [now, setNow] = useState(new Date());
   const router = useRouter();
   const hasMounted = useHasMounted();
 
+  const [orders, setOrders] = useState(initialOrders);
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
-  const [showModal, setShowModal] = useState(false);
+  const [showDetailModal, setShowDetailModal] = useState(false);
+  const [showAddModal, setShowAddModal] = useState(false);
 
   const handleViewDetail = (data: any) => {
     setSelectedOrder(data);
-    setShowModal(true);
+    setShowDetailModal(true);
+  };
+
+  const handleAddWorkOrder = (newOrder: any) => {
+    setOrders((prev) => [...prev, newOrder]);
   };
 
   useEffect(() => {
@@ -41,7 +46,7 @@ export default function WorkOrderList({ initialOrders }: { initialOrders: any[] 
     return () => clearInterval(timer);
   }, []);
 
-  const filteredOrders = initialOrders.filter((wo) => {
+  const filteredOrders = orders.filter((wo) => {
     const matchesTitle = wo.title.toLowerCase().includes(search.toLowerCase());
     const matchesStatus = status === "All Status" || wo.status === status;
     return matchesTitle && matchesStatus;
@@ -52,7 +57,6 @@ export default function WorkOrderList({ initialOrders }: { initialOrders: any[] 
       <div className="relative top-[-40px] h-full w-full">
         <h2 className="text-3xl font-bold text-gray-800 dark:text-white mb-1">Work Orders</h2>
 
-        {/* realtime calendar */}
         {hasMounted && (
           <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">
             {now.toLocaleString("id-ID")}
@@ -78,9 +82,8 @@ export default function WorkOrderList({ initialOrders }: { initialOrders: any[] 
             <option>Waiting</option>
           </select>
 
-          {/* posisi button */}
           <div className="justify-end w-full flex gap-8">
-            <Button variant="outline" className="text-sm" onClick={() => router.push("/work-order/add")}>
+            <Button variant="outline" className="text-sm" onClick={() => setShowAddModal(true)}>
               Add Work Order
             </Button>
             <Button variant="outline" className="text-sm" onClick={() => router.push("/work-order/history")}>
@@ -89,18 +92,26 @@ export default function WorkOrderList({ initialOrders }: { initialOrders: any[] 
           </div>
         </div>
 
-        {/* Daftar work order */}
+        {/* Work order list */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {filteredOrders.map((wo) => (
             <WorkOrderCard key={wo.id} data={wo} onViewDetail={handleViewDetail} />
           ))}
         </div>
 
-        {/* Modal Detail */}
+        {/* Detail modal */}
         <WorkOrderDetailModal
-          open={showModal}
-          onClose={() => setShowModal(false)}
+          open={showDetailModal}
+          onClose={() => setShowDetailModal(false)}
           workOrder={selectedOrder}
+        />
+
+        {/* Add Work Order modal */}
+        <AddWorkOrderDialog
+          open={showAddModal}
+          onOpenChange={setShowAddModal}
+          onAddWorkOrder={handleAddWorkOrder}
+          now={now}
         />
       </div>
     </div>
