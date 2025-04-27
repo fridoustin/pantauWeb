@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from "next/navigation";
 
 // Tipe data report
 interface Report {
@@ -43,6 +44,8 @@ export default function ReportTable() {
       after_photo_url: 'https://via.placeholder.com/100x60?text=After3',
     },
   ]);
+
+  const router = useRouter();
 
   const [showConfirm, setShowConfirm] = useState(false);
 
@@ -87,8 +90,16 @@ export default function ReportTable() {
 
   return (
     <div className="w-full px-6 py-6 relative">
-      {/* Tombol Export */}
-      <div className="flex justify-end mb-4">
+      {/* Tombol Kembali (Back Button) */}
+      <div className="flex justify-between mb-4">
+        <button
+          onClick={() => router.push("/work-order")}
+          className="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700 text-sm"
+        >
+          Back to Work Orders
+        </button>
+
+        {/* Tombol Export */}
         <button
           onClick={() => setShowConfirm(true)}
           className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 text-sm"
@@ -96,7 +107,6 @@ export default function ReportTable() {
           Export CSV
         </button>
       </div>
-
       {/* Modal Konfirmasi */}
       {showConfirm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -118,7 +128,7 @@ export default function ReportTable() {
                 onClick={handleConfirm}
                 className="px-4 py-2 text-sm bg-blue-600 text-white rounded hover:bg-blue-700"
               >
-                Teknik
+                Ya
               </button>
             </div>
           </div>
