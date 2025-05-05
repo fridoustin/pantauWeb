@@ -26,6 +26,7 @@ useSidebar,
 } from "@/components/ui/sidebar"
 
 import { signOutAction } from "@/app/actions"
+import { useEffect, useState } from "react"
 
 export function NavUser({
 user,
@@ -35,7 +36,14 @@ user: {
     email: string
 }
 }) {
+    const [mounted, setMounted] = useState(false)
+    useEffect(() => {
+        setMounted(true)
+      }, [])
     const { isMobile } = useSidebar()
+    if (!mounted) {
+        return <div className="px-4 py-3"></div>
+      }
     return (
         <SidebarMenu>
         <SidebarMenuItem>

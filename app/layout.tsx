@@ -9,6 +9,7 @@ import Link from "next/link";
 import "./globals.css";
 import Navbar from "@/components/navigation";
 import { Toaster } from "sonner";
+import { UserProvider } from "@/contexts/userContext";
 
 const defaultUrl = process.env.VERCEL_URL
   ? `https://${process.env.VERCEL_URL}`
@@ -43,7 +44,9 @@ export default function RootLayout({
           <Toaster position="top-right" />
 
           <main className="h-screen w-full flex flex-col items-center">
-            {children}
+            <UserProvider>
+              {children}
+            </UserProvider>
           </main>
         </ThemeProvider>
       </body>
