@@ -4,6 +4,7 @@ import { encodedRedirect } from "@/utils/utils";
 import { createClient } from "@/utils/supabase/server";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { supabaseAdmin } from "@/utils/supabase/admin";
 
 export const signUpAction = async (formData: FormData) => {
   const email = formData.get("email")?.toString();
@@ -19,33 +20,26 @@ export const signUpAction = async (formData: FormData) => {
   if (!email || !password) {
     return encodedRedirect(
       "error",
-      "/sign-up",
+      "/add-technician",
       "Email and password are required"
     );
   }
 
   // Sisipkan name dan role di dalam `options.data`
-  const { error } = await supabase.auth.signUp({
+  const { error } = await supabaseAdmin.auth.admin.createUser({
     email,
     password,
-    options: {
-      emailRedirectTo: `${origin}/auth/callback`,
-      data: {
-        name,  // <-- disimpan di raw_user_meta_data->>'name'
-        role,  // <-- disimpan di raw_user_meta_data->>'role'
-      },
-    },
+    user_metadata: {name, role}
   });
 
   if (error) {
     console.error(error.code + " " + error.message);
-    return encodedRedirect("error", "/sign-up", error.message);
+    return encodedRedirect("error", "/add-technician", error.message);
   } else {
-    await supabase.auth.signOut();
     return encodedRedirect(
       "success",
-      "/sign-in",
-      "Account created successfully. Please log in."
+      "/add-technician",
+      "Technician created successfully."
     );
   }
 };
