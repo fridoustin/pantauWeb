@@ -13,9 +13,7 @@ export const signUpAction = async (formData: FormData) => {
   // Tambahkan name dan role
   const name = formData.get("name")?.toString();
   const role = formData.get("role")?.toString();
-
-  const supabase = await createClient();
-  const origin = (await headers()).get("origin");
+  const phone = formData.get("phone")?.toString();
 
   if (!email || !password) {
     return encodedRedirect(
@@ -25,52 +23,30 @@ export const signUpAction = async (formData: FormData) => {
     );
   }
 
-  // Sisipkan name dan role di dalam `options.data`
-  const { error } = await supabaseAdmin.auth.admin.createUser({
+  const { error: authError } = await supabaseAdmin.auth.admin.createUser({
     email,
     password,
-    user_metadata: {name, role}
+    user_metadata: { name, role, phone },
   });
-
-  if (error) {
-    console.error(error.code + " " + error.message);
-    return encodedRedirect("error", "/add-technician", error.message);
-  } else {
-    return encodedRedirect(
-      "success",
-      "/add-technician",
-      "Technician created successfully."
-    );
-  }
-};
-
-export const signInAction = async (formData: FormData) => {
-  const email = formData.get("email") as string;
-  const password = formData.get("password") as string;
-  const supabase = await createClient();
-
-  const { error } = await supabase.auth.signInWithPassword({
-    email,
-    password,
-  });
-
-  if (error) {
-    return encodedRedirect("error", "/sign-in", error.message);
+  if (authError) {
+    console.error("Auth error:", authError);
+    return { success: false, message: authError.message };
   }
 
-  const {data: userData, error: userError} = await supabase.auth.getUser()
-  if(userError || !userData.user){
-    await supabase.auth.signOut();
-    return encodedRedirect("error", "/sign-in", "Failed to fetch user data.");
+  const { data: insertData, error: dbError } = await supabaseAdmin
+    .from("technician")
+    .insert([{
+      name,
+      email,
+      phone,
+    }]);
+  if (dbError) {
+    console.error("Insert error:", dbError);
+    return { success: false, message: dbError.message };
   }
+  console.log("Inserted technician:", insertData);
 
-  const role = userData.user.user_metadata?.role;
-  if (role !== "admin") {
-    await supabase.auth.signOut();
-    return encodedRedirect("error", "/sign-in", "Access denied. Only admin can login.");
-  }
-
-  return redirect("/dashboard");
+  return { success: true, message: "Technician created successfully." };
 };
 
 export const forgotPasswordAction = async (formData: FormData) => {
