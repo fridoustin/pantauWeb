@@ -35,11 +35,13 @@ export const signUpAction = async (formData: FormData) => {
 
   const { data: insertData, error: dbError } = await supabaseAdmin
     .from("technician")
-    .insert([{
+    .upsert([{
       name,
       email,
       phone,
-    }]);
+    }], {
+      onConflict: 'email',      // gunakan kolom email sebagai unique key
+    });
   if (dbError) {
     console.error("Insert error:", dbError);
     return { success: false, message: dbError.message };
