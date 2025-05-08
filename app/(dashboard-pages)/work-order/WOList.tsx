@@ -58,7 +58,7 @@ export default function WorkOrderList({ initialOrders }: { initialOrders: any[] 
   });
 
   return (
-    <div className="min-h-screen bg-background flex items-start justify-center px-4 py-10">
+    <div className="min-h-screen bg-background flex items-start justify-center py-10">
       <div className="relative top-[-40px] h-full w-full">
         <h2 className="text-3xl font-bold text-gray-800 dark:text-white mb-1">Work Orders</h2>
 
@@ -74,7 +74,7 @@ export default function WorkOrderList({ initialOrders }: { initialOrders: any[] 
             placeholder="Search by title..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full md:w-64"
+            className="w-full md:w-64 bg-white border-gray-300"
           />
           <select
             className="bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded px-4 py-2 text-sm text-gray-700 dark:text-white"
@@ -88,10 +88,10 @@ export default function WorkOrderList({ initialOrders }: { initialOrders: any[] 
           </select>
 
           <div className="justify-end w-full flex gap-8">
-            <Button variant="outline" className="text-sm" onClick={() => setShowAddModal(true)}>
+            <Button variant="outline" className="text-sm bg-[#0066ae] text-[#f1f5f8]" onClick={() => setShowAddModal(true)}>
               Add Work Order
             </Button>
-            <Button variant="outline" className="text-sm" onClick={() => router.push("/work-order/history")}>
+            <Button variant="outline" className="text-sm bg-[#0066ae] text-[#f1f5f8]" onClick={() => router.push("/work-order/history")}>
               History
             </Button>
           </div>
