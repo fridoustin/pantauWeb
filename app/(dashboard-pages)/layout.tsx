@@ -10,7 +10,7 @@ export default async function Layout({
         <SidebarProvider>
             <AppSidebar />
             <main>
-                <SidebarTrigger />
+                {/* <SidebarTrigger /> */}
                 {children}
             </main>
         </SidebarProvider>
