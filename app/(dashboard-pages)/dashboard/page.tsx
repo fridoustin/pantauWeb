@@ -10,83 +10,139 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+  Legend,
 } from "recharts"
 import { DatePicker } from "@/components/DatePicker"
 
-// Define the types for the data
 interface WorkOrderData {
-  month: string
+  date: string // change from `month` to `date`
   count: number
+}
+
+interface WorkOrderStatusData {
+  status: string
+  count: number
+}
+
+const STATUS_COLORS: Record<string, string> = {
+  "dalam_pengerjaan": "#2563eb", // blue
+  "belum mulai": "#facc15", // yellow
+  "terkendala": "#f87171", // red
+  "selesai": "#10b981", // green
 }
 
 export default function AdminDashboardPage() {
   const [stats, setStats] = useState({
     workOrders: 0,
-    bookedRooms: 0,
     users: 0,
   })
 
   const [monthlyWorkOrders, setMonthlyWorkOrders] = useState<WorkOrderData[]>([])
-  const [monthlyBookings, setMonthlyBookings] = useState<WorkOrderData[]>([])
+  const [statusData, setStatusData] = useState<WorkOrderStatusData[]>([])
 
   const [startDate, setStartDate] = useState<Date | null>(null)
   const [endDate, setEndDate] = useState<Date | null>(null)
 
   useEffect(() => {
-    const fetchStats = async () => {
-      const supabase = createClient()
-
-      const { count: workOrders } = await supabase
-        .from("workorder")
-        .select("*", { count: "exact", head: true })
-
-      const { count: bookedRooms } = await supabase
-        .from("meeting_room_booking")
-        .select("*", { count: "exact", head: true })
-
-      const { count: users } = await supabase
-        .from("technician")
-        .select("*", { count: "exact", head: true })
-
-      setStats({
-        workOrders: workOrders ?? 0,
-        bookedRooms: bookedRooms ?? 0,
-        users: users ?? 0,
-      })
-    }
-
-    const fetchMonthlyData = async () => {
-      const supabase = createClient()
-
-      const { data: workData } = await supabase.rpc("get_monthly_work_orders")
-      setMonthlyWorkOrders(workData ?? [])
-
-      const { data: bookingData } = await supabase.rpc("get_monthly_bookings")
-      setMonthlyBookings(bookingData ?? [])
-    }
-
-    fetchStats()
-    fetchMonthlyData()
+    fetchAllStats()
+    fetchInitialData()
   }, [])
+
+  const fetchAllStats = async () => {
+    const supabase = createClient()
+
+    const { count: workOrders } = await supabase
+      .from("workorder")
+      .select("*", { count: "exact", head: true })
+
+    const { count: bookedRooms } = await supabase
+      .from("meeting_room_booking")
+      .select("*", { count: "exact", head: true })
+
+    const { count: users } = await supabase
+      .from("technician")
+      .select("*", { count: "exact", head: true })
+
+    setStats({
+      workOrders: workOrders ?? 0,
+      users: users ?? 0,
+    })
+  }
+
+  const fetchInitialData = async () => {
+    const supabase = createClient()
+
+    const { data: workData } = await supabase.rpc("get_monthly_work_orders")
+    setMonthlyWorkOrders(workData ?? [])
+
+    const { data: allWorkOrders } = await supabase.from("workorder").select("status")
+
+    const statusMap: Record<string, number> = {}
+    allWorkOrders?.forEach(({ status }) => {
+      statusMap[status] = (statusMap[status] || 0) + 1
+    })
+
+    const groupedStatusData = Object.entries(statusMap).map(([status, count]) => ({
+      status,
+      count,
+    }))
+    setStatusData(groupedStatusData)
+  }
 
   const handleDateRangeChange = async () => {
     if (!startDate || !endDate) return
 
     const supabase = createClient()
 
-    const { data: filteredWorkOrders } = await supabase
+    const { data: filteredWorkOrders, error } = await supabase
       .from("workorder")
       .select("*")
       .gte("created_at", startDate.toISOString())
       .lte("created_at", endDate.toISOString())
 
-    const workOrdersData: WorkOrderData[] =
-      (filteredWorkOrders ?? []).map((item: any) => ({
-        month: item.created_at.substring(0, 7),
-        count: 1, // Grouping logic placeholder — change if needed
-      }))
+    if (!error && filteredWorkOrders) {
+      const workOrdersMap: Record<string, number> = {}
 
-    setMonthlyWorkOrders(workOrdersData)
+      filteredWorkOrders.forEach((item: any) => {
+        const date = item.created_at.substring(0, 10) // YYYY-MM-DD
+        workOrdersMap[date] = (workOrdersMap[date] || 0) + 1
+      })
+
+      // Fill in missing dates with 0
+      const filledWorkOrdersData: WorkOrderData[] = []
+      let current = new Date(startDate)
+      while (current <= endDate) {
+        const dateStr = current.toISOString().substring(0, 10)
+        filledWorkOrdersData.push({
+          date: dateStr,
+          count: workOrdersMap[dateStr] || 0,
+        })
+        current.setDate(current.getDate() + 1)
+      }
+
+      setMonthlyWorkOrders(filledWorkOrdersData)
+
+
+      const statusMap: Record<string, number> = {}
+      filteredWorkOrders.forEach(({ status }) => {
+        statusMap[status] = (statusMap[status] || 0) + 1
+      })
+
+      const groupedStatusData = Object.entries(statusMap).map(([status, count]) => ({
+        status,
+        count,
+      }))
+      setStatusData(groupedStatusData)
+    }
+  }
+
+  const resetFilters = () => {
+    setStartDate(null)
+    setEndDate(null)
+    fetchInitialData()
   }
 
   return (
@@ -95,34 +151,39 @@ export default function AdminDashboardPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <StatCard title="Total Work Orders" value={stats.workOrders} />
-        <StatCard title="Booked Rooms" value={stats.bookedRooms} />
         <StatCard title="Registered Users" value={stats.users} />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="bg-white dark:bg-gray-900 p-6 rounded-xl shadow">
-          <h3 className="text-lg font-semibold mb-4">Filter Work Orders by Date</h3>
-          <div className="flex gap-4">
-            <DatePicker
-              value={startDate ?? undefined}
-              onChange={(date) => setStartDate(date ?? null)}
-            />
-            <DatePicker
-              value={endDate ?? undefined}
-              onChange={(date) => setEndDate(date ?? null)}
-            />
-          </div>
+      <div className="bg-white dark:bg-gray-900 p-6 rounded-xl shadow">
+        <h3 className="text-lg font-semibold mb-4">Filter by Date</h3>
+        <div className="flex flex-wrap gap-4 items-center">
+          <DatePicker
+            value={startDate ?? undefined}
+            onChange={(date) => setStartDate(date ?? null)}
+          />
+          <DatePicker
+            value={endDate ?? undefined}
+            onChange={(date) => setEndDate(date ?? null)}
+          />
           <button
-            className="mt-4 p-2 bg-blue-600 text-white rounded"
+            className="p-2 bg-blue-600 text-white rounded"
             onClick={handleDateRangeChange}
             disabled={!startDate || !endDate}
           >
-            Apply Date Range Filter
+            Apply Date Filter
+          </button>
+          <button
+            className="p-2 bg-gray-300 text-black rounded"
+            onClick={resetFilters}
+          >
+            Reset Filter
           </button>
         </div>
+      </div>
 
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <ChartCard title="Monthly Work Orders" data={monthlyWorkOrders} dataKey="count" />
-        <ChartCard title="Monthly Bookings" data={monthlyBookings} dataKey="count" />
+        <PieChartCard title="Work Order Status" data={statusData} />
       </div>
     </div>
   )
@@ -144,16 +205,48 @@ const ChartCard = ({
   data: WorkOrderData[]
   dataKey: string
 }) => (
-  <div className="bg-white dark:bg-gray-900 p-6 rounded-xl shadow">
-    <h3 className="text-lg font-semibold mb-4">{title}</h3>
-    <ResponsiveContainer width="100%" height={300}>
-      <LineChart data={data}>
+  <div className="bg-white dark:bg-gray-900 p-8 rounded-xl shadow  col-span-4 row-span-4">
+    <h3 className="text-xl font-semibold mb-6">{title}</h3>
+    <ResponsiveContainer width="100%" height={400}>
+      <LineChart data={data} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
         <CartesianGrid strokeDasharray="3 3" />
-        <XAxis dataKey="month" />
+        <XAxis dataKey="date" />
         <YAxis />
         <Tooltip />
-        <Line type="monotone" dataKey={dataKey} stroke="#2563eb" strokeWidth={2} />
+        <Line type="monotone" dataKey={dataKey} stroke="#2563eb" strokeWidth={3} />
       </LineChart>
+    </ResponsiveContainer>
+  </div>
+)
+
+
+const PieChartCard = ({
+  title,
+  data,
+}: {
+  title: string
+  data: WorkOrderStatusData[]
+}) => (
+  <div className="bg-white dark:bg-gray-900 p-8 rounded-xl shadow  col-span-4 row-span-4">
+    <h3 className="text-xl font-semibold mb-6">{title}</h3>
+    <ResponsiveContainer width="100%" height={400}>
+      <PieChart>
+        <Pie
+          data={data}
+          dataKey="count"
+          nameKey="status"
+          cx="50%"
+          cy="50%"
+          outerRadius={140}
+          label
+        >
+          {data.map((entry, index) => (
+            <Cell key={`cell-${index}`} fill={STATUS_COLORS[entry.status] || "#8884d8"} />
+          ))}
+        </Pie>
+        <Tooltip />
+        <Legend />
+      </PieChart>
     </ResponsiveContainer>
   </div>
 )
