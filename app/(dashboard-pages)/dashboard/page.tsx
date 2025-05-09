@@ -18,7 +18,7 @@ import {
 import { DatePicker } from "@/components/DatePicker"
 
 interface WorkOrderData {
-  date: string // change from `month` to `date`
+  date: string
   count: number
 }
 
@@ -38,6 +38,8 @@ export default function AdminDashboardPage() {
   const [stats, setStats] = useState({
     workOrders: 0,
     users: 0,
+    totalCompletionRate: 0, // Total completion rate
+    filteredCompletionRate: 0, // Filtered completion rate
   })
 
   const [monthlyWorkOrders, setMonthlyWorkOrders] = useState<WorkOrderData[]>([])
@@ -66,9 +68,18 @@ export default function AdminDashboardPage() {
       .from("technician")
       .select("*", { count: "exact", head: true })
 
+    const { data: allWorkOrders } = await supabase.from("workorder").select("status")
+
+    // Calculate the total completion rate
+    const total = allWorkOrders?.length || 0
+    const completed = allWorkOrders?.filter((wo: any) => wo.status === "selesai").length || 0
+    const totalCompletionRate = total > 0 ? (completed / total) * 100 : 0
+
     setStats({
       workOrders: workOrders ?? 0,
       users: users ?? 0,
+      totalCompletionRate, // Set total completion rate
+      filteredCompletionRate: 0, // Set filtered completion rate to 0 initially
     })
   }
 
@@ -103,40 +114,55 @@ export default function AdminDashboardPage() {
       .gte("created_at", startDate.toISOString())
       .lte("created_at", endDate.toISOString())
 
-    if (!error && filteredWorkOrders) {
-      const workOrdersMap: Record<string, number> = {}
-
-      filteredWorkOrders.forEach((item: any) => {
-        const date = item.created_at.substring(0, 10) // YYYY-MM-DD
-        workOrdersMap[date] = (workOrdersMap[date] || 0) + 1
-      })
-
-      // Fill in missing dates with 0
-      const filledWorkOrdersData: WorkOrderData[] = []
-      let current = new Date(startDate)
-      while (current <= endDate) {
-        const dateStr = current.toISOString().substring(0, 10)
-        filledWorkOrdersData.push({
-          date: dateStr,
-          count: workOrdersMap[dateStr] || 0,
-        })
-        current.setDate(current.getDate() + 1)
-      }
-
-      setMonthlyWorkOrders(filledWorkOrdersData)
-
-
-      const statusMap: Record<string, number> = {}
-      filteredWorkOrders.forEach(({ status }) => {
-        statusMap[status] = (statusMap[status] || 0) + 1
-      })
-
-      const groupedStatusData = Object.entries(statusMap).map(([status, count]) => ({
-        status,
-        count,
+    if (error || !filteredWorkOrders) {
+      setStats((prevStats) => ({
+        ...prevStats,
+        filteredCompletionRate: 0,
       }))
-      setStatusData(groupedStatusData)
+      setMonthlyWorkOrders([])
+      setStatusData([])
+      return
     }
+
+    const workOrdersMap: Record<string, number> = {}
+    filteredWorkOrders.forEach((item: any) => {
+      const date = item.created_at.substring(0, 10) // YYYY-MM-DD
+      workOrdersMap[date] = (workOrdersMap[date] || 0) + 1
+    })
+
+    // Fill in missing dates with 0
+    const filledWorkOrdersData: WorkOrderData[] = []
+    let current = new Date(startDate)
+    while (current <= endDate) {
+      const dateStr = current.toISOString().substring(0, 10)
+      filledWorkOrdersData.push({
+        date: dateStr,
+        count: workOrdersMap[dateStr] || 0,
+      })
+      current.setDate(current.getDate() + 1)
+    }
+
+    setMonthlyWorkOrders(filledWorkOrdersData)
+
+    const statusMap: Record<string, number> = {}
+    filteredWorkOrders.forEach(({ status }) => {
+      statusMap[status] = (statusMap[status] || 0) + 1
+    })
+
+    const groupedStatusData = Object.entries(statusMap).map(([status, count]) => ({
+      status,
+      count,
+    }))
+    setStatusData(groupedStatusData)
+
+    // Calculate the filtered completion rate
+    const total = filteredWorkOrders.length
+    const completed = filteredWorkOrders.filter(wo => wo.status === "selesai").length
+    const filteredCompletionRate = total > 0 ? (completed / total) * 100 : 0
+    setStats((prevStats) => ({
+      ...prevStats,
+      filteredCompletionRate, // Set filtered completion rate
+    }))
   }
 
   const resetFilters = () => {
@@ -152,6 +178,7 @@ export default function AdminDashboardPage() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <StatCard title="Total Work Orders" value={stats.workOrders} />
         <StatCard title="Registered Users" value={stats.users} />
+        <StatCard title="Total Completion Rate" value={stats.totalCompletionRate.toFixed(2) + "%"} />
       </div>
 
       <div className="bg-white dark:bg-gray-900 p-6 rounded-xl shadow">
@@ -179,6 +206,10 @@ export default function AdminDashboardPage() {
             Reset Filter
           </button>
         </div>
+        <div className="mt-4">
+          <span className="font-medium">Filtered Completion Rate: </span>
+          {stats.filteredCompletionRate.toFixed(2)}%
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -189,7 +220,7 @@ export default function AdminDashboardPage() {
   )
 }
 
-const StatCard = ({ title, value }: { title: string; value: number }) => (
+const StatCard = ({ title, value }: { title: string; value: number | string }) => (
   <div className="bg-white dark:bg-gray-900 p-6 rounded-xl shadow text-center">
     <h2 className="text-lg font-medium text-muted-foreground">{title}</h2>
     <p className="text-3xl font-bold mt-2">{value}</p>
@@ -218,7 +249,6 @@ const ChartCard = ({
     </ResponsiveContainer>
   </div>
 )
-
 
 const PieChartCard = ({
   title,
