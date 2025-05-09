@@ -51,6 +51,33 @@ export const signUpAction = async (formData: FormData) => {
   return { success: true, message: "Technician created successfully." };
 };
 
+export const signInAction = async (formData: FormData) => {
+  const email = formData.get("email") as string;
+  const password = formData.get("password") as string;
+  const supabase = await createClient()
+
+  const { error } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+  });
+
+  if (error) {
+    return encodedRedirect("error", "/sign-in", error.message);
+  }
+
+  const {data: userData, error: userError} = await supabase.auth.getUser()
+  if(userError || !userData.user){
+    await supabase.auth.signOut();
+    return encodedRedirect("error", "/sign-in", "Failed to fetch user data.");
+  }
+  const role = userData.user.user_metadata?.role;
+  if (role !== "admin") {
+    await supabase.auth.signOut();
+    return encodedRedirect("error", "/sign-in", "Access denied. Only admin can login.");
+  }
+  return redirect("/dashboard");
+}
+
 export const forgotPasswordAction = async (formData: FormData) => {
   const email = formData.get("email")?.toString();
   const supabase = await createClient();
