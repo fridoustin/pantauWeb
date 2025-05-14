@@ -47,7 +47,6 @@ export function AddWorkOrderDialog({
             technician_id: "",
             category_id: "",
             start_time: new Date(),
-            end_time: new Date(),
         },
     });
 
@@ -97,7 +96,6 @@ export function AddWorkOrderDialog({
             technician_id: formData.technician_id,
             category_id:  formData.category_id,
             start_time:   formData.start_time.toISOString(),
-            end_time:     formData.end_time.toISOString(),
             status:       'belum_mulai',
             created_at:   new Date().toISOString(),
         };
@@ -105,11 +103,15 @@ export function AddWorkOrderDialog({
         const { data, error } = await supabase
             .from('workorder')
             .insert([payload])  
-
+            .select()
         if (error) {
             console.error('Supabase insert error:', error);
         } else {
-            onAddWorkOrder(data![0]);
+            if (data && data.length > 0) {
+                onAddWorkOrder(data[0]);
+            } else {
+                console.error("Data tidak ditemukan setelah insert");
+            }
             form.reset();
             onOpenChange(false);
         }
@@ -123,8 +125,7 @@ export function AddWorkOrderDialog({
                 description: "",
                 technician_id: "",
                 category_id: "",
-                start_time: new Date(),
-                end_time: new Date(),
+                start_time: new Date()
             });
         }
     }, [open, form]);

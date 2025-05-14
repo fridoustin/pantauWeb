@@ -19,8 +19,8 @@ export default function WorkOrderDetailModal({
           <DialogDescription>Status: {workOrder.status}</DialogDescription>
         </DialogHeader>
         <div className="mt-4 space-y-2 text-sm text-gray-700">
-          <p><strong>Created at:</strong> {workOrder.createdAt || "-"}</p>
-          <p><strong>Technician:</strong> {workOrder.technician || "-"}</p>
+          <p><strong>Created at:</strong> {workOrder.created_at || "-"}</p>
+          <p><strong>Technician:</strong> {workOrder.technician?.name || "-"}</p>
           <p><strong>Description:</strong> {workOrder.description || "No Description."}</p>
           <p><strong>Start at:</strong> {workOrder.start_time || "-"}</p>
           <p><strong>End at:</strong> {workOrder.end_time || "-"}</p>

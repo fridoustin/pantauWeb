@@ -18,7 +18,7 @@ export default function WorkOrderCard({ data, onViewDetail }: WorkOrderCardProps
         return "text-green-600 dark:text-green-400";
       case "process":
         return "text-yellow-600 dark:text-yellow-400";
-      case "canceled":
+      case "trouble":
         return "text-red-600 dark:text-red-400";
       default:
         return "text-gray-600 dark:text-gray-300";
