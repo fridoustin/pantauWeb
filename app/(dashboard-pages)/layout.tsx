@@ -8,11 +8,12 @@ export default async function Layout({
 }) {
     return (
         <SidebarProvider>
-            <AppSidebar />
-            <main>
-                {/* <SidebarTrigger /> */}
-                {children}
-            </main>
+            <div className="flex h-screen w-full overflow-hidden">
+                <AppSidebar />
+                <main className="flex-1 w-full overflow-auto">
+                    {children}
+                </main>
+            </div>
         </SidebarProvider>
     );
-}  
+}

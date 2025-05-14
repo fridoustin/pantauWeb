@@ -2,20 +2,10 @@
 
 import { useEffect, useState } from "react"
 import { createClient } from "@/utils/supabase/client"
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
-  Legend,
-} from "recharts"
 import { DatePicker } from "@/components/DatePicker"
+import { ChartCard } from "@/components/ChartCard"
+import { PieChartCard } from "@/components/PieChartCard"
+import { StatCard } from "@/components/StatCard"
 
 interface WorkOrderData {
   date: string
@@ -25,13 +15,6 @@ interface WorkOrderData {
 interface WorkOrderStatusData {
   status: string
   count: number
-}
-
-const STATUS_COLORS: Record<string, string> = {
-  "dalam_pengerjaan": "#2563eb", // blue
-  "belum mulai": "#facc15", // yellow
-  "terkendala": "#f87171", // red
-  "selesai": "#10b981", // green
 }
 
 export default function AdminDashboardPage() {
@@ -172,18 +155,20 @@ export default function AdminDashboardPage() {
   }
 
   return (
-    <div className="p-6 space-y-8">
-      <h1 className="text-2xl font-bold">Admin Dashboard</h1>
+    <div className="w-full h-full p-6 bg-blue-50">
+      <h1 className="text-3xl font-bold mb-6">Admin Dashboard</h1>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      {/* Stats Cards Row */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         <StatCard title="Total Work Orders" value={stats.workOrders} />
         <StatCard title="Registered Users" value={stats.users} />
         <StatCard title="Total Completion Rate" value={stats.totalCompletionRate.toFixed(2) + "%"} />
       </div>
 
-      <div className="bg-white dark:bg-gray-900 p-6 rounded-xl shadow">
+      {/* Date Filter Card */}
+      <div className="bg-white dark:bg-gray-900 p-6 rounded-xl shadow mb-6">
         <h3 className="text-lg font-semibold mb-4">Filter by Date</h3>
-        <div className="flex flex-wrap gap-4 items-center">
+        <div className="flex flex-wrap gap-4 items-center mb-4">
           <DatePicker
             value={startDate ?? undefined}
             onChange={(date) => setStartDate(date ?? null)}
@@ -193,90 +178,30 @@ export default function AdminDashboardPage() {
             onChange={(date) => setEndDate(date ?? null)}
           />
           <button
-            className="p-2 bg-blue-600 text-white rounded"
+            className="px-4 py-2 bg-blue-600 text-white rounded"
             onClick={handleDateRangeChange}
             disabled={!startDate || !endDate}
           >
             Apply Date Filter
           </button>
           <button
-            className="p-2 bg-gray-300 text-black rounded"
+            className="px-4 py-2 bg-gray-300 text-black rounded"
             onClick={resetFilters}
           >
             Reset Filter
           </button>
         </div>
-        <div className="mt-4">
+        <div>
           <span className="font-medium">Filtered Completion Rate: </span>
           {stats.filteredCompletionRate.toFixed(2)}%
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      {/* Charts Row */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-8">
         <ChartCard title="Monthly Work Orders" data={monthlyWorkOrders} dataKey="count" />
         <PieChartCard title="Work Order Status" data={statusData} />
       </div>
     </div>
   )
 }
-
-const StatCard = ({ title, value }: { title: string; value: number | string }) => (
-  <div className="bg-white dark:bg-gray-900 p-6 rounded-xl shadow text-center">
-    <h2 className="text-lg font-medium text-muted-foreground">{title}</h2>
-    <p className="text-3xl font-bold mt-2">{value}</p>
-  </div>
-)
-
-const ChartCard = ({
-  title,
-  data,
-  dataKey,
-}: {
-  title: string
-  data: WorkOrderData[]
-  dataKey: string
-}) => (
-  <div className="bg-white dark:bg-gray-900 p-8 rounded-xl shadow  col-span-4 row-span-4">
-    <h3 className="text-xl font-semibold mb-6">{title}</h3>
-    <ResponsiveContainer width="100%" height={400}>
-      <LineChart data={data} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
-        <CartesianGrid strokeDasharray="3 3" />
-        <XAxis dataKey="date" />
-        <YAxis />
-        <Tooltip />
-        <Line type="monotone" dataKey={dataKey} stroke="#2563eb" strokeWidth={3} />
-      </LineChart>
-    </ResponsiveContainer>
-  </div>
-)
-
-const PieChartCard = ({
-  title,
-  data,
-}: {
-  title: string
-  data: WorkOrderStatusData[]
-}) => (
-  <div className="bg-white dark:bg-gray-900 p-8 rounded-xl shadow  col-span-4 row-span-4">
-    <h3 className="text-xl font-semibold mb-6">{title}</h3>
-    <ResponsiveContainer width="100%" height={400}>
-      <PieChart>
-        <Pie
-          data={data}
-          dataKey="count"
-          nameKey="status"
-          cx="50%"
-          cy="50%"
-          outerRadius={140}
-          label
-        >
-          {data.map((entry, index) => (
-            <Cell key={`cell-${index}`} fill={STATUS_COLORS[entry.status] || "#8884d8"} />
-          ))}
-        </Pie>
-        <Tooltip />
-        <Legend />
-      </PieChart>
-    </ResponsiveContainer>
-  </div>
-)
