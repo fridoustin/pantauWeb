@@ -7,7 +7,6 @@ export default async function Layout({
 }) {
   return (
     <div className="h-screen w-full flex flex-col">
-    <Navbar />
     <div className="flex-1 flex items-center justify-center overflow-hidden">
       {children}
     </div>
