@@ -104,11 +104,6 @@ export default function WorkOrderList() {
       return matchesTitle && matchesStatus;
     });
 
-  // Handlers
-  const handleViewDetail = (data: WorkOrder) => {
-    setSelectedOrder(data);
-    setShowDetailModal(true);
-  };
 
   const handleAddWorkOrder = async (newOrder: WorkOrder) => {
     try {
@@ -207,7 +202,6 @@ export default function WorkOrderList() {
             <WorkOrderCard
               key={wo.id}
               data={wo}
-              onViewDetail={handleViewDetail}
             />
           ))}
         </div>
