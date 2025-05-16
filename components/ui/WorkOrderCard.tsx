@@ -16,11 +16,11 @@ interface WorkOrderCardProps {
 export default function WorkOrderCard({ data }: WorkOrderCardProps) {
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
-      case 'finish':
+      case 'selesai':
         return 'text-green-600 dark:text-green-400';
-      case 'process':
+      case 'dalam pengerjaan':
         return 'text-yellow-600 dark:text-yellow-400';
-      case 'trouble':
+      case 'terkendala':
         return 'text-red-600 dark:text-red-400';
       default:
         return 'text-gray-600 dark:text-gray-300';

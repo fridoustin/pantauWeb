@@ -87,10 +87,10 @@ export default function WorkOrderList() {
 
   // Status mapping and filtering
   const statusMapping: { [key: string]: string } = {
-    belum_mulai: "Waiting",
-    dalam_pengerjaan: "Process",
-    selesai: "Finish",
-    terkendala: "Trouble"
+    belum_mulai: "Belum Mulai",
+    dalam_pengerjaan: "Dalam Pengerjaan",
+    selesai: "Selesai",
+    terkendala: "Terkendala"
   };
 
   const filteredOrders = orders
@@ -172,10 +172,10 @@ export default function WorkOrderList() {
             onChange={(e) => setStatusFilter(e.target.value)}
           >
             <option>All Status</option>
-            <option>Finish</option>
-            <option>Process</option>
-            <option>Waiting</option>
-            <option>Trouble</option>
+            <option>Selesai</option>
+            <option>Dalam Pengerjaan</option>
+            <option>Belum Mulai</option>
+            <option>Terkendala</option>
           </select>
 
           <div className="justify-end w-full flex gap-8">
