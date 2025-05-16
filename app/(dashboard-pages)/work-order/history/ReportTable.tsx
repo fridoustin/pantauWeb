@@ -8,7 +8,7 @@ interface Report {
   technician: string;
   created_at: string | null;
   start_time: string | null;
-  end_time: string | null;
+  updated_at: string | null;
   duration: string | null;
   before_url: string | null;
   after_url: string | null;
@@ -103,8 +103,8 @@ export default function ReportTable() {
       r.technician,
       typeof r.created_at === 'string' ? r.created_at.replace(/<br\s*\/?>/gi, ' ') : '-',
       typeof r.start_time === 'string' ? r.start_time.replace(/<br\s*\/?>/gi, ' ') : '-',
-      typeof r.end_time === 'string' ? r.end_time.replace(/<br\s*\/?>/gi, ' ') : '-',
-      calculateDuration(r.start_time, r.end_time),
+      typeof r.updated_at === 'string' ? r.updated_at.replace(/<br\s*\/?>/gi, ' ') : '-',
+      calculateDuration(r.start_time, r.updated_at),
       r.before_url || '-',
       r.after_url || '-',
     ]);
@@ -192,9 +192,9 @@ export default function ReportTable() {
                 <td className="p-4 border">{report.technician}</td>
                 <td className="p-4 border whitespace-pre-line">{formatDateTime(report.created_at)}</td>
                 <td className="p-4 border whitespace-pre-line">{formatDateTime(report.start_time)}</td>
-                <td className="p-4 border whitespace-pre-line">{formatDateTime(report.end_time)}</td>
+                <td className="p-4 border whitespace-pre-line">{formatDateTime(report.updated_at)}</td>
                 <td className="p-4 border">
-                  {calculateDuration(report.start_time, report.end_time)}
+                  {calculateDuration(report.start_time, report.updated_at)}
                 </td>
                 <td className="p-4 border">
                   {report.before_url ? (

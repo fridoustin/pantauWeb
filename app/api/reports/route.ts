@@ -14,6 +14,7 @@ export async function GET() {
       after_url,
       start_time,
       end_time,
+      updated_at,
       status,
       technician_id(name)
     `)
@@ -28,7 +29,7 @@ export async function GET() {
 
   const reports = filtered.map((r: any) => {
     const start = new Date(r.start_time);
-    const end = new Date(r.end_time);
+    const end = new Date(r.updated_at);
 
     let duration = '-';
     if (!isNaN(start.getTime()) && !isNaN(end.getTime())) {
@@ -52,7 +53,7 @@ export async function GET() {
       technician: r.technician_id?.name ?? '-',
       created_at: r.created_at,
       start_time: r.start_time ?? '-',
-      end_time: r.end_time ?? '-',
+      updated_at: r.updated_at ?? '-',
       before_url: r.before_url ?? '',
       after_url: r.after_url ?? '',
       duration,
