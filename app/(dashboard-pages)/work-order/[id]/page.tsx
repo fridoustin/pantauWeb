@@ -184,9 +184,9 @@ export default function WorkOrderDetailsPage({ params }: Props) {
 
   // Calculate duration between start and end times
   const calculateDuration = (): string => {
-    if (!workOrder?.start_time || !workOrder?.end_time) return 'Not completed';
+    if (!workOrder?.start_time || !workOrder?.updated_at) return 'Not completed';
     const start = new Date(workOrder.start_time);
-    const end = new Date(workOrder.end_time);
+    const end = new Date(workOrder.updated_at);
     const diff = end.getTime() - start.getTime();
     const days = Math.floor(diff / (24 * 60 * 60 * 1000));
     const hours = Math.floor((diff % (24 * 60 * 60 * 1000)) / (60 * 60 * 1000));
@@ -275,7 +275,7 @@ export default function WorkOrderDetailsPage({ params }: Props) {
                                     </div>
                                     <div>
                                         <div className="text-sm font-medium text-gray-500">End Date</div>
-                                        <div>{formatDate(workOrder?.end_time)}</div>
+                                        <div>{formatDate(workOrder?.updated_at)}</div>
                                     </div>
                                 </div>
                             </div>
