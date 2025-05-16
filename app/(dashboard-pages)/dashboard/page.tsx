@@ -21,8 +21,8 @@ export default function AdminDashboardPage() {
   const [stats, setStats] = useState({
     workOrders: 0,
     users: 0,
-    totalCompletionRate: 0, // Total completion rate
-    filteredCompletionRate: 0, // Filtered completion rate
+    totalCompletionRate: 0,
+    filteredCompletionRate: 0,
   })
 
   const [monthlyWorkOrders, setMonthlyWorkOrders] = useState<WorkOrderData[]>([])
@@ -43,17 +43,12 @@ export default function AdminDashboardPage() {
       .from("workorder")
       .select("*", { count: "exact", head: true })
 
-    const { count: bookedRooms } = await supabase
-      .from("meeting_room_booking")
-      .select("*", { count: "exact", head: true })
-
     const { count: users } = await supabase
       .from("technician")
       .select("*", { count: "exact", head: true })
 
     const { data: allWorkOrders } = await supabase.from("workorder").select("status")
 
-    // Calculate the total completion rate
     const total = allWorkOrders?.length || 0
     const completed = allWorkOrders?.filter((wo: any) => wo.status === "selesai").length || 0
     const totalCompletionRate = total > 0 ? (completed / total) * 100 : 0
@@ -61,21 +56,36 @@ export default function AdminDashboardPage() {
     setStats({
       workOrders: workOrders ?? 0,
       users: users ?? 0,
-      totalCompletionRate, // Set total completion rate
-      filteredCompletionRate: 0, // Set filtered completion rate to 0 initially
+      totalCompletionRate,
+      filteredCompletionRate: 0,
     })
   }
 
   const fetchInitialData = async () => {
     const supabase = createClient()
 
-    const { data: workData } = await supabase.rpc("get_monthly_work_orders")
-    setMonthlyWorkOrders(workData ?? [])
+    const { data: allWorkOrders } = await supabase.from("workorder").select("created_at, status")
 
-    const { data: allWorkOrders } = await supabase.from("workorder").select("status")
+    if (!allWorkOrders) return
 
+    // Group by date
+    const workOrdersMap: Record<string, number> = {}
+    allWorkOrders.forEach((item) => {
+      const date = item.created_at.substring(0, 10)
+      workOrdersMap[date] = (workOrdersMap[date] || 0) + 1
+    })
+
+    const sortedDates = Object.keys(workOrdersMap).sort()
+    const formattedData: WorkOrderData[] = sortedDates.map((date) => ({
+      date,
+      count: workOrdersMap[date],
+    }))
+
+    setMonthlyWorkOrders(formattedData)
+
+    // Group by status
     const statusMap: Record<string, number> = {}
-    allWorkOrders?.forEach(({ status }) => {
+    allWorkOrders.forEach(({ status }) => {
       statusMap[status] = (statusMap[status] || 0) + 1
     })
 
@@ -83,6 +93,7 @@ export default function AdminDashboardPage() {
       status,
       count,
     }))
+
     setStatusData(groupedStatusData)
   }
 
@@ -98,8 +109,8 @@ export default function AdminDashboardPage() {
       .lte("created_at", endDate.toISOString())
 
     if (error || !filteredWorkOrders) {
-      setStats((prevStats) => ({
-        ...prevStats,
+      setStats((prev) => ({
+        ...prev,
         filteredCompletionRate: 0,
       }))
       setMonthlyWorkOrders([])
@@ -107,13 +118,13 @@ export default function AdminDashboardPage() {
       return
     }
 
+    // Group by date
     const workOrdersMap: Record<string, number> = {}
     filteredWorkOrders.forEach((item: any) => {
-      const date = item.created_at.substring(0, 10) // YYYY-MM-DD
+      const date = item.created_at.substring(0, 10)
       workOrdersMap[date] = (workOrdersMap[date] || 0) + 1
     })
 
-    // Fill in missing dates with 0
     const filledWorkOrdersData: WorkOrderData[] = []
     let current = new Date(startDate)
     while (current <= endDate) {
@@ -127,6 +138,7 @@ export default function AdminDashboardPage() {
 
     setMonthlyWorkOrders(filledWorkOrdersData)
 
+    // Group by status
     const statusMap: Record<string, number> = {}
     filteredWorkOrders.forEach(({ status }) => {
       statusMap[status] = (statusMap[status] || 0) + 1
@@ -136,15 +148,17 @@ export default function AdminDashboardPage() {
       status,
       count,
     }))
+
     setStatusData(groupedStatusData)
 
-    // Calculate the filtered completion rate
+    // Filtered completion rate
     const total = filteredWorkOrders.length
-    const completed = filteredWorkOrders.filter(wo => wo.status === "selesai").length
+    const completed = filteredWorkOrders.filter((wo) => wo.status === "selesai").length
     const filteredCompletionRate = total > 0 ? (completed / total) * 100 : 0
-    setStats((prevStats) => ({
-      ...prevStats,
-      filteredCompletionRate, // Set filtered completion rate
+
+    setStats((prev) => ({
+      ...prev,
+      filteredCompletionRate,
     }))
   }
 
@@ -199,7 +213,7 @@ export default function AdminDashboardPage() {
 
       {/* Charts Row */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-8">
-        <ChartCard title="Monthly Work Orders" data={monthlyWorkOrders} dataKey="count" />
+        <ChartCard title="Work Orders by Date" data={monthlyWorkOrders} dataKey="count" />
         <PieChartCard title="Work Order Status" data={statusData} />
       </div>
     </div>
