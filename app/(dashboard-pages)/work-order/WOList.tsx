@@ -85,6 +85,26 @@ export default function WorkOrderList() {
     };
   }, []);
 
+  const handleDelete = async (orderId: string) => {
+    try {
+      console.log('Attempting to delete:', orderId);
+      
+      const { data, error } = await supabase
+        .from('workorder')
+        .delete()
+        .eq('id', orderId)
+        .select();
+
+      console.log('Delete response:', { data, error });
+
+      if (error) throw error;
+      
+      setOrders(prev => prev.filter(order => order.id !== orderId));
+    } catch (err) {
+      console.error('Full error object:', err);
+    }
+  };
+
   // Status mapping and filtering
   const statusMapping: { [key: string]: string } = {
     belum_mulai: "Belum Mulai",
@@ -202,6 +222,7 @@ export default function WorkOrderList() {
             <WorkOrderCard
               key={wo.id}
               data={wo}
+              onDelete={handleDelete}
             />
           ))}
         </div>
