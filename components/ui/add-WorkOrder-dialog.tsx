@@ -22,6 +22,11 @@ interface Categories {
     lantai: string;
 }
 
+interface Admins {
+    admin_id: string;
+    name: string;
+}
+
 interface AddWorkOrderDialogProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
@@ -39,6 +44,7 @@ export function AddWorkOrderDialog({
     const [technicians, setTechnicians] = useState<Technician[]>([]);
     const [loading, setLoading] = useState(false);
     const [categories, setCategories] = useState<Categories[]>([]);
+    const [admins, setAdmins] = useState<Admins[]>([]);
 
     const form = useForm({
         defaultValues: {
@@ -47,6 +53,7 @@ export function AddWorkOrderDialog({
             technician_id: "",
             category_id: "",
             start_time: new Date(),
+            admin_id: ""
         },
     });
 
@@ -87,6 +94,35 @@ export function AddWorkOrderDialog({
         fetchCategories();
     }, []);
 
+    useEffect(() => {
+        const fetchAdmin = async () => {
+            const { data, error } = await supabase
+                .from('admin')
+                .select('admin_id, name');
+            console.log('Fetched Admin:', data);
+            
+            if (error || !data) {
+                console.error('Error fetching admin: ', error);
+                return;
+            }
+            if (data){
+                setAdmins(data);
+            }
+        }
+        fetchAdmin();
+    }, []);
+
+    const toTimestampString = (date: Date) => {
+        const pad = (n: number) => n.toString().padStart(2, "0");
+        const Y = date.getFullYear();
+        const M = pad(date.getMonth() + 1);
+        const D = pad(date.getDate());
+        const h = pad(date.getHours());
+        const m = pad(date.getMinutes());
+        const s = pad(date.getSeconds());
+        return `${Y}-${M}-${D} ${h}:${m}:${s}`;
+    };
+
     const handleSubmit = form.handleSubmit(async (formData) => {
         setLoading(true);
 
@@ -95,9 +131,10 @@ export function AddWorkOrderDialog({
             description:  formData.description,
             technician_id: formData.technician_id,
             category_id:  formData.category_id,
-            start_time:   formData.start_time.toISOString(),
+            start_time: toTimestampString(formData.start_time),
             status:       'belum_mulai',
-            created_at:   new Date().toISOString(),
+            created_at: toTimestampString(new Date()),
+            admin_id:     formData.admin_id
         };
         console.log('Insert payload:', payload);
         const { data, error } = await supabase
@@ -125,6 +162,7 @@ export function AddWorkOrderDialog({
                 description: "",
                 technician_id: "",
                 category_id: "",
+                admin_id: "",
                 start_time: new Date()
             });
         }
@@ -230,6 +268,32 @@ export function AddWorkOrderDialog({
                                         {categories.map((cate) => (
                                                 <SelectItem key={cate.category_id} value={cate.category_id}>
                                                     {cate.lantai}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+
+                        {/* Admin Select */}
+                        <FormField
+                            control={form.control}
+                            name="admin_id"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Admin</FormLabel>
+                                    <Select onValueChange={field.onChange} value={field.value}>
+                                        <FormControl>
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Select Admin" />
+                                            </SelectTrigger>
+                                        </FormControl>
+                                        <SelectContent>
+                                        {admins.map((adm) => (
+                                                <SelectItem key={adm.admin_id} value={adm.admin_id}>
+                                                    {adm.name}
                                                 </SelectItem>
                                             ))}
                                         </SelectContent>
