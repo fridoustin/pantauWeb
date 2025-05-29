@@ -6,21 +6,17 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { supabaseAdmin } from "@/utils/supabase/admin";
 
-export const signUpAction = async (formData: FormData) => {
+export async function signUpAction(formData: FormData): Promise<void> {
   const email = formData.get("email")?.toString();
   const password = formData.get("password")?.toString();
 
-  // Tambahkan name dan role
   const name = formData.get("name")?.toString();
   const role = formData.get("role")?.toString();
   const phone = formData.get("phone")?.toString();
 
   if (!email || !password) {
-    return encodedRedirect(
-      "error",
-      "/add-technician",
-      "Email and password are required"
-    );
+    // lempar ke halaman form lagi dengan query error
+    return redirect(`/add-technician?error=${encodeURIComponent("Email and password are required")}`);
   }
 
   const { error: authError } = await supabaseAdmin.auth.admin.createUser({
@@ -30,26 +26,23 @@ export const signUpAction = async (formData: FormData) => {
   });
   if (authError) {
     console.error("Auth error:", authError);
-    return { success: false, message: authError.message };
+    return redirect(`/add-technician?error=${encodeURIComponent(authError.message)}`);
   }
 
-  const { data: insertData, error: dbError } = await supabaseAdmin
+  const { error: dbError } = await supabaseAdmin
     .from("technician")
-    .upsert([{
-      name,
-      email,
-      phone,
-    }], {
-      onConflict: 'email',      // gunakan kolom email sebagai unique key
-    });
+    .upsert(
+      [{ name, email, phone }],
+      { onConflict: "email" },
+    );
   if (dbError) {
     console.error("Insert error:", dbError);
-    return { success: false, message: dbError.message };
+    return redirect(`/add-technician?error=${encodeURIComponent(dbError.message)}`);
   }
-  console.log("Inserted technician:", insertData);
 
-  return { success: true, message: "Technician created successfully." };
-};
+  // Jika semua sukses, redirect ke list atau halaman sukses
+  return redirect(`/add-technician?success=${encodeURIComponent("Technician created successfully.")}`);
+}
 
 export const signInAction = async (formData: FormData) => {
   const email = formData.get("email") as string;
