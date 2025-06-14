@@ -10,8 +10,10 @@ interface Report {
   start_time: string | null;
   updated_at: string | null;
   duration: string | null;
+  status: string | null;
   before_url: string | null;
   after_url: string | null;
+  note: string | null;
 }
 
 function formatDateTime(datetimeStr: string | null) {
@@ -67,9 +69,22 @@ function calculateDuration(start: string | null, end: string | null) {
   return result.trim();
 }
 
+const statusMapping = {
+  'selesai': 'Selesai',
+  'dalam_pengerjaan': 'Dalam Pengerjaan',
+  'belum_mulai': 'Belum Mulai',
+  'terkendala': 'Terkendala'
+};
+
+function getStatusLabel(statusValue: string | null): string {
+  if (!statusValue) return '-';
+  return statusMapping[statusValue as keyof typeof statusMapping] || statusValue;
+}
+
 export default function ReportTable() {
   const router = useRouter();
   const [reports, setReports] = useState<Report[]>([]);
+  const [statusFilter, setStatusFilter] = useState('All Status');
   const [showConfirm, setShowConfirm] = useState(false);
 
   useEffect(() => {
@@ -86,6 +101,21 @@ export default function ReportTable() {
     fetchReports();
   }, []);
 
+  const statusOptions = [
+    { label: 'All Status', value: 'All Status' },
+    { label: 'Selesai', value: 'selesai' },
+    { label: 'Dalam Pengerjaan', value: 'dalam_pengerjaan' },
+    { label: 'Belum Mulai', value: 'belum_mulai' },
+    { label: 'Terkendala', value: 'terkendala' }
+  ];
+
+  const filteredReports = reports.filter((r) => {
+    const matchesTitle = r.title.toLowerCase();
+    const matchesStatus =
+      statusFilter === 'All Status' || r.status === statusFilter;
+    return matchesTitle && matchesStatus;
+  });
+  
   const exportToCSV = () => {
     const headers = [
       'WO Title',
@@ -94,19 +124,23 @@ export default function ReportTable() {
       'Start',
       'End',
       'Duration',
+      'Status',
       'Before Photo',
       'After Photo',
+      'Note',
     ];
 
-    const rows = reports.map((r) => [
+    const rows = filteredReports.map((r) => [
       r.title,
       r.technician,
       typeof r.created_at === 'string' ? r.created_at.replace(/<br\s*\/?>/gi, ' ') : '-',
       typeof r.start_time === 'string' ? r.start_time.replace(/<br\s*\/?>/gi, ' ') : '-',
       typeof r.updated_at === 'string' ? r.updated_at.replace(/<br\s*\/?>/gi, ' ') : '-',
       calculateDuration(r.start_time, r.updated_at),
+      r.status,
       r.before_url || '-',
       r.after_url || '-',
+      r.note,
     ]);
 
     const csvContent =
@@ -142,6 +176,20 @@ export default function ReportTable() {
         >
           Export CSV
         </button>
+      </div>
+
+      <div className="flex gap-4 items-center mb-4">
+        <select
+          className="border rounded px-4 py-2 text-sm"
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value)}
+        >
+          {statusOptions.map((opt) => (
+            <option key={opt.value} value={opt.value}>
+              {opt.label}
+            </option>
+          ))}
+        </select>
       </div>
 
       {showConfirm && (
@@ -181,12 +229,14 @@ export default function ReportTable() {
               <th className="p-4 border">Start</th>
               <th className="p-4 border">End</th>
               <th className="p-4 border">Duration</th>
+              <th className="p-4 border">Status</th>
               <th className="p-4 border">Before</th>
               <th className="p-4 border">After</th>
+              <th className="p-4 border">Note</th>
             </tr>
           </thead>
           <tbody>
-            {reports.map((report, i) => (
+            {filteredReports.map((report, i) => (
               <tr key={i} className="hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
                 <td className="p-4 border">{report.title}</td>
                 <td className="p-4 border">{report.technician}</td>
@@ -196,6 +246,7 @@ export default function ReportTable() {
                 <td className="p-4 border">
                   {calculateDuration(report.start_time, report.updated_at)}
                 </td>
+                <td className="p-4 border">{report.status}</td>
                 <td className="p-4 border">
                   {report.before_url ? (
                     <img src={report.before_url} alt="Before" className="w-28 rounded shadow" />
@@ -210,6 +261,7 @@ export default function ReportTable() {
                     '-'
                   )}
                 </td>
+                <td className="p-4 border">{report.note}</td>
               </tr>
             ))}
           </tbody>

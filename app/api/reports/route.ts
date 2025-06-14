@@ -16,6 +16,7 @@ export async function GET() {
       end_time,
       updated_at,
       status,
+      note,
       technician_id(name)
     `)
     .order('created_at', { ascending: false });
@@ -24,10 +25,9 @@ export async function GET() {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  // Filter hanya status selesai
-  const filtered = (data || []).filter((r: any) => r.status === 'selesai');
+  const source = data || [];
 
-  const reports = filtered.map((r: any) => {
+  const reports = source.map((r: any) => {
     const start = new Date(r.start_time);
     const end = new Date(r.updated_at);
 
@@ -57,6 +57,8 @@ export async function GET() {
       before_url: r.before_url ?? '',
       after_url: r.after_url ?? '',
       duration,
+      status: r.status ?? '-',
+      note: r.note ?? '-'
     };
   });
 
