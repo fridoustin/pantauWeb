@@ -257,11 +257,11 @@ export function AddWorkOrderDialog({
                             name="category_id"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Category</FormLabel>
+                                    <FormLabel>Floor</FormLabel>
                                     <Select onValueChange={field.onChange} value={field.value}>
                                         <FormControl>
                                             <SelectTrigger>
-                                                <SelectValue placeholder="Select Category" />
+                                                <SelectValue placeholder="Select Floor" />
                                             </SelectTrigger>
                                         </FormControl>
                                         <SelectContent>
