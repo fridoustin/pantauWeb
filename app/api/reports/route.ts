@@ -25,9 +25,9 @@ export async function GET() {
   }
 
   // Filter hanya status selesai
-  const filtered = (data || []).filter((r: any) => r.status === 'selesai');
+  // const filtered = (data || []).filter((r: any) => r.status === 'selesai');
 
-  const reports = filtered.map((r: any) => {
+  const reports = (data || []).map((r: any) => {
     const start = new Date(r.start_time);
     const end = new Date(r.updated_at);
 
@@ -51,9 +51,10 @@ export async function GET() {
     return {
       title: r.title ?? '-',
       technician: r.technician_id?.name ?? '-',
+      status:r.status ?? '-',
       created_at: r.created_at,
       start_time: r.start_time ?? '-',
-      updated_at: r.updated_at ?? '-',
+      updated_at: r.end_time ?? '-',
       before_url: r.before_url ?? '',
       after_url: r.after_url ?? '',
       duration,
