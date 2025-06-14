@@ -27,6 +27,7 @@ interface WorkOrder {
   category_id: string | null;
   before_url: string | null
   after_url: string | null
+  note: string | null
 }
 
 interface Technician {
@@ -126,6 +127,7 @@ export default function WorkOrderDetailsPage({ params }: Props) {
   const [category, setCategory] = useState<Category | null>(null);
   const [beforeImage, setBeforeImage] = useState<string | null>(null);
   const [afterImage, setAfterImage] = useState<string | null>(null);
+  const [note, setNote] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [beforeIsPortrait, setBeforeIsPortrait] = useState(false);
@@ -147,6 +149,7 @@ export default function WorkOrderDetailsPage({ params }: Props) {
         setWorkOrder(wo);
         setBeforeImage(wo.before_url)
         setAfterImage(wo.after_url)
+        setNote(wo.note)
 
         // fetch technician
         if (wo.technician_id) {
@@ -294,7 +297,7 @@ export default function WorkOrderDetailsPage({ params }: Props) {
                     {/* Images */}
                     <section>
                     <h3 className="text-lg font-medium flex items-center mb-2">
-                        <ImageIcon className="w-5 h-5 mr-2 text-gray-500" /> Report Images
+                        <ImageIcon className="w-5 h-5 mr-2 text-gray-500" /> Report
                     </h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         {/* Before */}
@@ -346,6 +349,10 @@ export default function WorkOrderDetailsPage({ params }: Props) {
                             )}
                         </div>
                         </div>
+                    </div>
+                    <div className="text-sm font-medium text-gray-500 mb-2 mt-4">Note</div>
+                    <div className="bg-gray-50 p-4 rounded-md">
+                        <div className="truncate">{workOrder?.note || 'N/A'}</div>
                     </div>
                     </section>
                     
