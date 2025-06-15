@@ -2,6 +2,13 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { format } from 'date-fns';
+import { CalendarIcon } from 'lucide-react';
+
+import { Button } from '@/components/ui/button';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { cn } from '@/lib/utils';
 
 interface Report {
   title: string;
@@ -16,9 +23,20 @@ interface Report {
   note: string | null;
 }
 
+const statusMapping = {
+  selesai: 'Selesai',
+  dalam_pengerjaan: 'Dalam Pengerjaan',
+  belum_mulai: 'Belum Mulai',
+  terkendala: 'Terkendala',
+};
+
+function getStatusLabel(statusValue: string | null): string {
+  if (!statusValue) return '-';
+  return statusMapping[statusValue as keyof typeof statusMapping] || statusValue;
+}
+
 function formatDateTime(datetimeStr: string | null) {
   if (!datetimeStr) return '-';
-
   const dateObj = new Date(datetimeStr);
   if (isNaN(dateObj.getTime())) return '-';
 
@@ -34,7 +52,6 @@ function formatDateTime(datetimeStr: string | null) {
     minute: '2-digit',
     hour12: false,
   };
-  // Gunakan en-GB agar pemisah jam adalah ":" bukan "."
   const timeFormatted = dateObj.toLocaleTimeString('en-GB', optionsTime);
 
   return (
@@ -46,16 +63,13 @@ function formatDateTime(datetimeStr: string | null) {
   );
 }
 
-
 function calculateDuration(start: string | null, end: string | null) {
   if (!start || !end) return '-';
-
   const startDate = new Date(start);
   const endDate = new Date(end);
   if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) return '-';
 
   const diffMs = endDate.getTime() - startDate.getTime();
-
   const totalMinutes = Math.floor(diffMs / (1000 * 60));
   const days = Math.floor(totalMinutes / (60 * 24));
   const hours = Math.floor((totalMinutes % (60 * 24)) / 60);
@@ -69,22 +83,11 @@ function calculateDuration(start: string | null, end: string | null) {
   return result.trim();
 }
 
-const statusMapping = {
-  'selesai': 'Selesai',
-  'dalam_pengerjaan': 'Dalam Pengerjaan',
-  'belum_mulai': 'Belum Mulai',
-  'terkendala': 'Terkendala'
-};
-
-function getStatusLabel(statusValue: string | null): string {
-  if (!statusValue) return '-';
-  return statusMapping[statusValue as keyof typeof statusMapping] || statusValue;
-}
-
 export default function ReportTable() {
   const router = useRouter();
   const [reports, setReports] = useState<Report[]>([]);
   const [statusFilter, setStatusFilter] = useState('All Status');
+  const [dateFilter, setDateFilter] = useState<Date | null>(null);
   const [showConfirm, setShowConfirm] = useState(false);
 
   useEffect(() => {
@@ -97,7 +100,6 @@ export default function ReportTable() {
         console.error('Gagal fetch laporan:', err);
       }
     };
-
     fetchReports();
   }, []);
 
@@ -106,16 +108,21 @@ export default function ReportTable() {
     { label: 'Selesai', value: 'selesai' },
     { label: 'Dalam Pengerjaan', value: 'dalam_pengerjaan' },
     { label: 'Belum Mulai', value: 'belum_mulai' },
-    { label: 'Terkendala', value: 'terkendala' }
+    { label: 'Terkendala', value: 'terkendala' },
   ];
 
   const filteredReports = reports.filter((r) => {
-    const matchesTitle = r.title.toLowerCase();
     const matchesStatus =
       statusFilter === 'All Status' || r.status === statusFilter;
-    return matchesTitle && matchesStatus;
+
+    const matchesDate =
+      !dateFilter ||
+      (r.created_at &&
+        new Date(r.created_at).toDateString() === dateFilter.toDateString());
+
+    return matchesStatus && matchesDate;
   });
-  
+
   const exportToCSV = () => {
     const headers = [
       'WO Title',
@@ -129,24 +136,21 @@ export default function ReportTable() {
       'After Photo',
       'Note',
     ];
-
     const rows = filteredReports.map((r) => [
       r.title,
       r.technician,
-      typeof r.created_at === 'string' ? r.created_at.replace(/<br\s*\/?>/gi, ' ') : '-',
-      typeof r.start_time === 'string' ? r.start_time.replace(/<br\s*\/?>/gi, ' ') : '-',
-      typeof r.updated_at === 'string' ? r.updated_at.replace(/<br\s*\/?>/gi, ' ') : '-',
+      r.created_at ?? '-',
+      r.start_time ?? '-',
+      r.updated_at ?? '-',
       calculateDuration(r.start_time, r.updated_at),
-      r.status,
+      getStatusLabel(r.status),
       r.before_url || '-',
       r.after_url || '-',
-      r.note,
+      r.note || '-',
     ]);
-
     const csvContent =
       'data:text/csv;charset=utf-8,' +
       [headers, ...rows].map((e) => e.join(',')).join('\n');
-
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement('a');
     link.setAttribute('href', encodedUri);
@@ -163,22 +167,19 @@ export default function ReportTable() {
 
   return (
     <div className="w-full px-6 py-6 relative">
-      <div className="flex justify-between mb-4">
+      <div className="flex justify-between mb-4 flex-wrap gap-2">
         <button
-          onClick={() => router.push("/work-order")}
+          onClick={() => router.push('/work-order')}
           className="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700 text-sm"
         >
           Back to Work Orders
         </button>
-        <button
-          onClick={() => setShowConfirm(true)}
-          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 text-sm"
-        >
-          Export CSV
-        </button>
+
+        
       </div>
 
-      <div className="flex gap-4 items-center mb-4">
+      {/* Filter: calendar + status */}
+      <div className="flex gap-4 items-center mb-4 flex-wrap">
         <select
           className="border rounded px-4 py-2 text-sm"
           value={statusFilter}
@@ -190,8 +191,42 @@ export default function ReportTable() {
             </option>
           ))}
         </select>
+        
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              className={cn(
+                'justify-start text-left font-normal bg-white dark:bg-gray-900',
+                !dateFilter && 'text-muted-foreground'
+              )}
+            >
+              <CalendarIcon className="mr-2 h-4 w-4" />
+              {dateFilter ? format(dateFilter, 'MMMM do, yyyy') : <span>Pilih tanggal</span>}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0 border rounded bg-white dark:bg-gray-900">
+            <Calendar
+              mode="single"
+              selected={dateFilter ?? undefined}
+              onSelect={(date) => setDateFilter(date ?? null)}
+              initialFocus
+              className="border-0 rounded"
+            />
+          </PopoverContent>
+        </Popover>
+
+        <button
+          onClick={() => setShowConfirm(true)}
+          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 text-sm ml-auto"
+        >
+          Export CSV
+        </button>
+
+        
       </div>
 
+      {/* Confirm popup */}
       {showConfirm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 max-w-sm w-full">
@@ -219,6 +254,7 @@ export default function ReportTable() {
         </div>
       )}
 
+      {/* Table */}
       <div className="bg-white dark:bg-gray-900 rounded-lg shadow border border-gray-300 dark:border-gray-700 overflow-x-auto">
         <table className="min-w-full text-sm text-left border-collapse">
           <thead className="bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200">
@@ -243,10 +279,8 @@ export default function ReportTable() {
                 <td className="p-4 border whitespace-pre-line">{formatDateTime(report.created_at)}</td>
                 <td className="p-4 border whitespace-pre-line">{formatDateTime(report.start_time)}</td>
                 <td className="p-4 border whitespace-pre-line">{formatDateTime(report.updated_at)}</td>
-                <td className="p-4 border">
-                  {calculateDuration(report.start_time, report.updated_at)}
-                </td>
-                <td className="p-4 border">{report.status}</td>
+                <td className="p-4 border">{calculateDuration(report.start_time, report.updated_at)}</td>
+                <td className="p-4 border">{getStatusLabel(report.status)}</td>
                 <td className="p-4 border">
                   {report.before_url ? (
                     <img src={report.before_url} alt="Before" className="w-28 rounded shadow" />

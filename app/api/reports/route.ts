@@ -53,7 +53,7 @@ export async function GET() {
       technician: r.technician_id?.name ?? '-',
       created_at: r.created_at,
       start_time: r.start_time ?? '-',
-      updated_at: r.updated_at ?? '-',
+      updated_at: r.end_time ?? '-',
       before_url: r.before_url ?? '',
       after_url: r.after_url ?? '',
       duration,
