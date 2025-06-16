@@ -131,7 +131,6 @@ export function AddWorkOrderDialog({
             description:  formData.description,
             technician_id: formData.technician_id,
             category_id:  formData.category_id,
-            start_time: toTimestampString(formData.start_time),
             status:       'belum_mulai',
             created_at: toTimestampString(new Date()),
             admin_id:     formData.admin_id
