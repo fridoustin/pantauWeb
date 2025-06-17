@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Trash2 } from "lucide-react"
+import { Trash2, Edit } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -24,6 +24,7 @@ interface ScheduleTableProps {
   rooms: string[]
   data: ScheduleEvent[]
   onDeleteEvent?: (eventId: string) => void
+  onEditEvent?: (event: ScheduleEvent) => void
   selectedDate: Date
 }
 
@@ -43,7 +44,7 @@ const getEventColor = (eventType: string) => {
   }
 }
 
-export function ScheduleTable({ rooms, data, onDeleteEvent, selectedDate }: ScheduleTableProps) {
+export function ScheduleTable({ rooms, data, onDeleteEvent, onEditEvent, selectedDate }: ScheduleTableProps) {
   const [selectedEvent, setSelectedEvent] = useState<ScheduleEvent | null>(null)
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
@@ -141,6 +142,13 @@ export function ScheduleTable({ rooms, data, onDeleteEvent, selectedDate }: Sche
 
   const handleEventClick = (event: ScheduleEvent) => {
     setSelectedEvent(event)
+  }
+
+  const handleEditClick = () => {
+    if (selectedEvent && onEditEvent) {
+      onEditEvent(selectedEvent)
+      setSelectedEvent(null) // Close the details dialog
+    }
   }
 
   const handleDeleteClick = async () => {
@@ -297,6 +305,14 @@ export function ScheduleTable({ rooms, data, onDeleteEvent, selectedDate }: Sche
                 <div className="flex justify-end gap-2 mt-4">
                   <Button variant="outline" onClick={() => setSelectedEvent(null)}>
                     Close
+                  </Button>
+                  <Button
+                    variant="default"
+                    onClick={handleEditClick}
+                    className="flex items-center gap-2"
+                  >
+                    <Edit className="h-4 w-4" />
+                    Edit Event
                   </Button>
                   <Button
                     variant="destructive"

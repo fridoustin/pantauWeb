@@ -21,6 +21,7 @@ import {
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { AddEventDialog } from "@/components/add-event-dialog";
+import { EditEventDialog } from "@/components/edit-event-dialog";
 import type { ScheduleEvent } from "@/types/schedule-types";
 
 export default function TableSchedule() {
@@ -29,6 +30,8 @@ export default function TableSchedule() {
   const [events, setEvents] = useState<ScheduleEvent[]>([]);
   const [rooms, setRooms] = useState<string[]>([]);
   const [isAddEventOpen, setIsAddEventOpen] = useState(false);
+  const [isEditEventOpen, setIsEditEventOpen] = useState(false);
+  const [eventToEdit, setEventToEdit] = useState<ScheduleEvent | null>(null);
 
   // Ambil data event dari API
   useEffect(() => {
@@ -105,6 +108,26 @@ export default function TableSchedule() {
     }
   };
 
+  const handleEditEvent = async (updatedEvent: ScheduleEvent) => {
+    // Kirim PUT ke API
+    const res = await fetch(`/api/bookings?booking_id=${updatedEvent.id}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(updatedEvent),
+    });
+    const result = await res.json();
+    if (result.error) {
+      console.error("Error mengupdate event:", result.error);
+      throw new Error(result.error);
+    } else {
+      fetchEvents();
+      setIsEditEventOpen(false);
+      setEventToEdit(null);
+    }
+  };
+
   const handleDeleteEvent = async (eventId: string) => {
     const res = await fetch(`/api/bookings?booking_id=${eventId}`, {
       method: "DELETE",
@@ -115,6 +138,11 @@ export default function TableSchedule() {
     } else {
       fetchEvents();
     }
+  };
+
+  const handleOpenEditDialog = (event: ScheduleEvent) => {
+    setEventToEdit(event);
+    setIsEditEventOpen(true);
   };
 
   return (
@@ -176,6 +204,7 @@ export default function TableSchedule() {
           rooms={rooms}
           data={filteredEvents}
           onDeleteEvent={handleDeleteEvent}
+          onEditEvent={handleOpenEditDialog}
           selectedDate={date}
         />
       </div>
@@ -187,6 +216,15 @@ export default function TableSchedule() {
         rooms={rooms}
         selectedDate={date}
         existingEvents={events}
+      />
+
+      <EditEventDialog
+        open={isEditEventOpen}
+        onOpenChange={setIsEditEventOpen}
+        onEditEvent={handleEditEvent}
+        rooms={rooms}
+        existingEvents={events}
+        eventToEdit={eventToEdit}
       />
     </div>
   );
