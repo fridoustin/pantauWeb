@@ -47,11 +47,22 @@ export async function POST(request: Request) {
   const body = await request.json();
   const { title, date, startTime, duration, type, location, description } =
     body;
-  const eventDate = new Date(date);
-  eventDate.setHours(startTime, 0, 0, 0);
-  const start_time = formatISO(eventDate);
   
-  const endTimeDate = addHours(eventDate, duration);
+  const eventDate = new Date(date);
+  
+  const localEventDate = new Date(
+    eventDate.getFullYear(),
+    eventDate.getMonth(),
+    eventDate.getDate(),
+    startTime,
+    0,
+    0,
+    0
+  );
+  
+  const start_time = formatISO(localEventDate);
+  
+  const endTimeDate = addHours(localEventDate, duration);
   const end_time = formatISO(endTimeDate);
 
   // Cari room_id berdasarkan nama ruangan

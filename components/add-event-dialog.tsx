@@ -133,10 +133,21 @@ export function AddEventDialog({
 
     setIsSubmitting(true)
 
+    const selectedDate = data.date
+    const dateForSubmission = new Date(
+      selectedDate.getFullYear(),
+      selectedDate.getMonth(),
+      selectedDate.getDate(),
+      12, // Set ke tengah hari untuk menghindari masalah DST
+      0,
+      0,
+      0
+    )
+
     const newEvent: ScheduleEvent = {
       id: Date.now().toString(), // Generate a unique ID
       title: data.title,
-      date: data.date.toISOString(),
+      date: dateForSubmission.toISOString(),
       startTime: Number.parseInt(data.startTime),
       duration: Number.parseInt(data.duration),
       type: data.type,
@@ -205,7 +216,26 @@ export function AddEventDialog({
                           </FormControl>
                         </PopoverTrigger>
                         <PopoverContent className="w-auto p-0" align="start">
-                          <Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus />
+                          <Calendar 
+                            mode="single" 
+                            selected={field.value} 
+                            onSelect={(date) => {
+                              if (date) {
+                                // Pastikan tanggal yang dipilih menggunakan local timezone
+                                const localDate = new Date(
+                                  date.getFullYear(),
+                                  date.getMonth(),
+                                  date.getDate(),
+                                  12, // Set ke tengah hari
+                                  0,
+                                  0,
+                                  0
+                                )
+                                field.onChange(localDate)
+                              }
+                            }} 
+                            initialFocus 
+                          />
                         </PopoverContent>
                       </Popover>
                       <FormMessage />
@@ -363,4 +393,3 @@ export function AddEventDialog({
     </>
   )
 }
-
