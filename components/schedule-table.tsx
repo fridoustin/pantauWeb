@@ -26,12 +26,18 @@ interface ScheduleTableProps {
   onDeleteEvent?: (eventId: string) => void
   selectedDate: Date
 }
-const isSameDate = (a: Date, b: Date) => {
-  return a.getFullYear() === b.getFullYear() &&
-    a.getMonth() === b.getMonth() &&
-    a.getDate() === b.getDate()
+
+// Normalize date to midnight for comparison
+const normalizeDate = (date: Date) => {
+  const copy = new Date(date)
+  copy.setHours(0, 0, 0, 0)
+  return copy
 }
-// buat warna card
+
+const isSameDay = (a: Date, b: Date) => {
+  return normalizeDate(a).getTime() === normalizeDate(b).getTime()
+}
+
 const getEventColor = (eventType: string) => {
   switch (eventType.toLowerCase()) {
     case "meeting":
@@ -57,11 +63,7 @@ export function ScheduleTable({ rooms, data, onDeleteEvent, selectedDate }: Sche
   const isEventStart = (time: number, room: string) => {
     return data.some((event) => {
       const eventDate = new Date(event.date)
-      return (
-        event.startTime === time &&
-        event.location === room &&
-        isSameDate(eventDate, selectedDate)
-      )
+      return event.startTime === time && event.location === room && isSameDay(eventDate, selectedDate)
     })
   }
 
@@ -70,14 +72,9 @@ export function ScheduleTable({ rooms, data, onDeleteEvent, selectedDate }: Sche
   const getEventsStartingAt = (time: number, room: string) => {
     return data.filter((event) => {
       const eventDate = new Date(event.date)
-      return (
-        event.startTime === time &&
-        event.location === room &&
-        isSameDate(eventDate, selectedDate)
-      )
+      return event.startTime === time && event.location === room && isSameDay(eventDate, selectedDate)
     })
   }
-
 
 
   // Check if a time slot is a continuation of an event (not the start)
@@ -86,15 +83,16 @@ export function ScheduleTable({ rooms, data, onDeleteEvent, selectedDate }: Sche
       if (event.location !== room) return false
 
       const eventStart = new Date(event.date)
-      eventStart.setHours(event.startTime, 0, 0, 0)
+      const eventStartTime = new Date(eventStart)
+      eventStartTime.setHours(event.startTime)
 
-      const eventEnd = new Date(eventStart)
-      eventEnd.setHours(eventStart.getHours() + event.duration)
+      const eventEndTime = new Date(eventStartTime)
+      eventEndTime.setHours(eventEndTime.getHours() + event.duration)
 
-      const slot = new Date(selectedDate)
-      slot.setHours(time, 0, 0, 0)
+      const slotTime = new Date(selectedDate)
+      slotTime.setHours(time, 0, 0, 0)
 
-      return slot > eventStart && slot < eventEnd
+      return slotTime > eventStartTime && slotTime < eventEndTime
     })
   }
   // Get the continuing event for a specific time and room  
@@ -103,15 +101,16 @@ export function ScheduleTable({ rooms, data, onDeleteEvent, selectedDate }: Sche
       if (event.location !== room) return false
 
       const eventStart = new Date(event.date)
-      eventStart.setHours(event.startTime, 0, 0, 0)
+      const eventStartTime = new Date(eventStart)
+      eventStartTime.setHours(event.startTime)
 
-      const eventEnd = new Date(eventStart)
-      eventEnd.setHours(eventStart.getHours() + event.duration)
+      const eventEndTime = new Date(eventStartTime)
+      eventEndTime.setHours(eventEndTime.getHours() + event.duration)
 
-      const slot = new Date(selectedDate)
-      slot.setHours(time, 0, 0, 0)
+      const slotTime = new Date(selectedDate)
+      slotTime.setHours(time, 0, 0, 0)
 
-      return slot > eventStart && slot < eventEnd
+      return slotTime > eventStartTime && slotTime < eventEndTime
     })
   }
 
@@ -161,9 +160,7 @@ export function ScheduleTable({ rooms, data, onDeleteEvent, selectedDate }: Sche
               <TableHead className="w-[80px]">Time</TableHead>
               {rooms.map((room) => (
                 <TableHead key={room} className="w-1/8">
-                  <div className="text-center">
-                    <div className="font-bold">{room}</div>
-                  </div>
+                  <div className="text-center font-bold">{room}</div>
                 </TableHead>
               ))}
             </TableRow>
@@ -173,7 +170,6 @@ export function ScheduleTable({ rooms, data, onDeleteEvent, selectedDate }: Sche
               <TableRow key={time}>
                 <TableCell className="font-medium whitespace-nowrap">{formatTime(time)}</TableCell>
                 {rooms.map((room) => {
-                  // If this is the start of an event
                   if (isEventStart(time, room)) {
                     const events = getEventsStartingAt(time, room)
                     return (
@@ -209,7 +205,6 @@ export function ScheduleTable({ rooms, data, onDeleteEvent, selectedDate }: Sche
                     )
                   }
 
-                  // If this is a continuation of an event
                   if (isEventContinuation(time, room)) {
                     const continuingEvent = getContinuingEvent(time, room)
                     if (continuingEvent) {
@@ -315,4 +310,3 @@ export function ScheduleTable({ rooms, data, onDeleteEvent, selectedDate }: Sche
     </>
   )
 }
-
