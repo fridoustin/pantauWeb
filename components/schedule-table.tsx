@@ -26,7 +26,11 @@ interface ScheduleTableProps {
   onDeleteEvent?: (eventId: string) => void
   selectedDate: Date
 }
-
+const isSameDate = (a: Date, b: Date) => {
+  return a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate()
+}
 // buat warna card
 const getEventColor = (eventType: string) => {
   switch (eventType.toLowerCase()) {
@@ -53,91 +57,65 @@ export function ScheduleTable({ rooms, data, onDeleteEvent, selectedDate }: Sche
   const isEventStart = (time: number, room: string) => {
     return data.some((event) => {
       const eventDate = new Date(event.date)
-      const isSameDay =
-        eventDate.getDate() === selectedDate.getDate() &&
-        eventDate.getMonth() === selectedDate.getMonth() &&
-        eventDate.getFullYear() === selectedDate.getFullYear()
-
-      return event.startTime === time && event.location === room && isSameDay
+      return (
+        event.startTime === time &&
+        event.location === room &&
+        isSameDate(eventDate, selectedDate)
+      )
     })
   }
+
 
   // Get events that start at a specific time and room
   const getEventsStartingAt = (time: number, room: string) => {
     return data.filter((event) => {
       const eventDate = new Date(event.date)
-      const isSameDay =
-        eventDate.getDate() === selectedDate.getDate() &&
-        eventDate.getMonth() === selectedDate.getMonth() &&
-        eventDate.getFullYear() === selectedDate.getFullYear()
-
-      return event.startTime === time && event.location === room && isSameDay
+      return (
+        event.startTime === time &&
+        event.location === room &&
+        isSameDate(eventDate, selectedDate)
+      )
     })
   }
+
+
 
   // Check if a time slot is a continuation of an event (not the start)
   const isEventContinuation = (time: number, room: string) => {
     return data.some((event) => {
-      // Check if the event is in the selected room
       if (event.location !== room) return false
 
-      const eventDate = new Date(event.date)
-      const eventStartDay = eventDate.getDate()
-      const eventStartMonth = eventDate.getMonth()
-      const eventStartYear = eventDate.getFullYear()
+      const eventStart = new Date(event.date)
+      eventStart.setHours(event.startTime, 0, 0, 0)
 
-      const selectedDay = selectedDate.getDate()
-      const selectedMonth = selectedDate.getMonth()
-      const selectedYear = selectedDate.getFullYear()
+      const eventEnd = new Date(eventStart)
+      eventEnd.setHours(eventStart.getHours() + event.duration)
 
-      // If event starts on the selected day
-      if (eventStartDay === selectedDay && eventStartMonth === selectedMonth && eventStartYear === selectedYear) {
-        // Check if this time slot is a continuation of the event
-        return time > event.startTime && time < event.startTime + event.duration
-      }
+      const slot = new Date(selectedDate)
+      slot.setHours(time, 0, 0, 0)
 
-      // If event starts on a previous day
-      const eventStartTime = new Date(eventStartYear, eventStartMonth, eventStartDay, event.startTime)
-      const eventEndTime = new Date(eventStartTime)
-      eventEndTime.setHours(eventEndTime.getHours() + event.duration)
-
-      const timeSlotDate = new Date(selectedYear, selectedMonth, selectedDay, time)
-
-      // Check if this time slot falls within the event's duration
-      return timeSlotDate >= eventStartTime && timeSlotDate < eventEndTime
+      return slot > eventStart && slot < eventEnd
     })
   }
-
+  // Get the continuing event for a specific time and room  
   const getContinuingEvent = (time: number, room: string) => {
     return data.find((event) => {
-      // cek slot ruangan
       if (event.location !== room) return false
 
-      const eventDate = new Date(event.date)
-      const eventStartDay = eventDate.getDate()
-      const eventStartMonth = eventDate.getMonth()
-      const eventStartYear = eventDate.getFullYear()
+      const eventStart = new Date(event.date)
+      eventStart.setHours(event.startTime, 0, 0, 0)
 
-      const selectedDay = selectedDate.getDate()
-      const selectedMonth = selectedDate.getMonth()
-      const selectedYear = selectedDate.getFullYear()
+      const eventEnd = new Date(eventStart)
+      eventEnd.setHours(eventStart.getHours() + event.duration)
 
-      if (eventStartDay === selectedDay && eventStartMonth === selectedMonth && eventStartYear === selectedYear) {
-        // cek jika kelanjutan event
-        return time > event.startTime && time < event.startTime + event.duration
-      }
+      const slot = new Date(selectedDate)
+      slot.setHours(time, 0, 0, 0)
 
-      // jika event dimulai pada hari sebelumnya
-      const eventStartTime = new Date(eventStartYear, eventStartMonth, eventStartDay, event.startTime)
-      const eventEndTime = new Date(eventStartTime)
-      eventEndTime.setHours(eventEndTime.getHours() + event.duration)
-
-      const timeSlotDate = new Date(selectedYear, selectedMonth, selectedDay, time)
-
-      // cek time slot
-      return timeSlotDate >= eventStartTime && timeSlotDate < eventEndTime
+      return slot > eventStart && slot < eventEnd
     })
   }
+
+
 
   const handleEventClick = (event: ScheduleEvent) => {
     setSelectedEvent(event)
